@@ -5,8 +5,7 @@
         <div v-if="user">
             Discord username: {{ user.discord.username }}<br>
             osu! username: {{ user.osu.username }}<br>
-            <p v-if="eligible"> You are eligible </p>
-            <p v-else> You are not eligible </p>
+            <p> PR TEST PR TEST PR TEST </p>
         </div>
         {{ value }}
         <div @click="run">
