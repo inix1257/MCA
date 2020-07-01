@@ -25,9 +25,23 @@ body {
     min-height: 100%;
     background-image: url("../../CorsaceAssets/img/ayim-mca/site/bg.png");
     background-position: center;
-    background-repeat: no-repeat;
     background-size: cover;
     font-family: 'Red Hat Display', sans-serif;
     color: white;
 	font-size: 1rem;
+}
+
+.triangle {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 10px solid;
+    border-bottom: none;
+    transition: all 0.25s;
+
+    &--active {
+        border-top: none;
+        border-bottom: 10px solid #fb2475;
+    }
 }

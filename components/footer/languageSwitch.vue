@@ -42,7 +42,7 @@
 <script lang="ts">
 import Vue from "vue";
 import { NuxtVueI18n } from "nuxt-i18n";
-import lang from "../../CorsaceAssets/lang/index";
+import lang from "../../../CorsaceAssets/lang/index";
 
 export default Vue.extend({
     data () {
@@ -85,7 +85,6 @@ export default Vue.extend({
 
     height: 100%;
     width: 90px; 
-    padding-left: 20px;
 
     color: #cccccc;   
 }

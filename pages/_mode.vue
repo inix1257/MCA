@@ -9,10 +9,10 @@
 
                     <div class="voting-date__content">
                         <div class="voting-date__title">
-                            <b>{{ $t('mca.main.stage.nominating') }}</b>
+                            <b>{{ $t('mca_ayim.main.stage.nominating') }}</b>
                         </div>
                         <div class="voting-date__subtitle">
-                            {{ $t('mca.main.daysLeft') }}
+                            {{ $t('mca_ayim.main.daysLeft') }}
                         </div>
                     </div>
                 </div>
@@ -21,19 +21,19 @@
             <div class="general-info">
                 <p>01/01/20 10PST - 01/13/20 10PST</p>
 
-                <p>{{ $t('mca.main.message.1') }}</p>
+                <p>{{ $t('mca_ayim.main.message.1') }}</p>
 
-                <p>{{ $t('mca.main.message.2') }}</p>
+                <p>{{ $t('mca_ayim.main.message.2') }}</p>
                                 
-                <p>{{ $t('mca.main.message.3') }}</p>
+                <p>{{ $t('mca_ayim.main.message.3') }}</p>
                                 
-                <p>{{ $t('mca.main.message.4') }}</p>
+                <p>{{ $t('mca_ayim.main.message.4') }}</p>
             </div>
         </div>
 
         <div class="right-side">
             <div class="mode-title">
-                {{ selectedMode }} | {{ $t('mca.main.nominating') }}
+                {{ selectedMode }} | {{ $t('mca_ayim.main.nominating') }}
             </div>
 
             <div
@@ -42,7 +42,7 @@
             >
                 <div class="mode-container__general">
                     <div class="ranked-sets">
-                        <small>{{ $t('mca.main.rankedSets') }}</small>
+                        <small>{{ $t('mca_ayim.main.rankedSets') }}</small>
                         <div class="ranked-sets__divider" />
                         <div class="ranked-sets__content">
                             0000000
@@ -53,7 +53,7 @@
                         class="vote-now"
                         :class="`vote-now--${selectedMode}`"
                     >
-                        {{ $t('mca.main.voteNow') }} <span>>></span>
+                        {{ $t('mca_ayim.main.voteNow') }} <span>>></span>
                     </div>
                 </div>
 
@@ -64,7 +64,7 @@
                         class="categories__list"
                     >
                         <div class="categories__category-title">
-                            {{ $t('mca.main.categories.map') }}
+                            {{ $t('mca_ayim.main.categories.map') }}
                         </div>
                         <div class="categories__category-award">
                             grand award
@@ -89,7 +89,7 @@
                     
                 <div class="organizers">
                     <div class="organizers__title">
-                        <small>{{ $t('mca.main.organized') }}</small>
+                        <small>{{ $t('mca_ayim.main.organized') }}</small>
                     </div>
                     <div class="organizers__content">
                         person a, person b, person c, person d, person e
