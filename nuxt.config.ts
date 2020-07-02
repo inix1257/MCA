@@ -25,6 +25,7 @@ export default {
             {
                 locales,
                 defaultLocale: "en",
+                strategy: "no_prefix",
                 lazy: true,
                 langDir: "../CorsaceAssets/lang/",
                 vueI18n: {
