@@ -40,7 +40,7 @@ export default {
 
                 if (!data.error) {
                     this.user = data.user;
-                    for (const eligibility of this.user.mca) {
+                    for (const eligibility of this.user.mcaEligibility) {
                         if (eligibility.year === (new Date).getUTCFullYear) {
                             this.eligible = true;
                         }

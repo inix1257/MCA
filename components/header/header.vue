@@ -3,7 +3,7 @@
         <img src="../../../CorsaceAssets/img/ayim-mca/site/2019.png">
         <a
             class="header__title--active"
-            href="#MCA"
+            :href="'/'"
             v-html="$t('mca_ayim.header.mca')"
         />
         <a class="header__seperator"><img src="../../../CorsaceAssets/img/ayim-mca/site/l.png"></a>
@@ -180,7 +180,7 @@ export default {
 	right: 0;
 	bottom: -52%;
     background-color: #0f0f0f;
-    border-radius: 0 0 10% 10%;
+    border-radius: 0 0 10px 10px;
     box-shadow: 0px 0px 8px white;
     padding: 1% 4%;
     margin-right: 2%;
@@ -194,9 +194,9 @@ export default {
 }
 
 .fade-enter-active, .fade-leave-active {
-  transition: opacity .25s;
+    transition: opacity .25s;
 }
 .fade-enter, .fade-leave-to {
-  opacity: 0;
+    opacity: 0;
 }
 </style>

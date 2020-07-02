@@ -1,28 +1,30 @@
 <template>
     <div class="locale">
-        <div 
-            v-if="change"
-            class="locale__selector"
-        >
-            <div class="options">
-                <div
-                    v-for="locale in availableLocales"
-                    :key="locale.code"
-                    class="locale__option"
+        <transition name="fade">
+            <div 
+                v-if="change"
+                class="locale__selector"
+            >
+                <div class="options">
+                    <div
+                        v-for="locale in availableLocales"
+                        :key="locale.code"
+                        class="locale__option"
 
-                    @click="switchLocale(locale.code)"
-                >
-                    <img  
-                        :src="getFlagUrl(locale.code)" 
-                        class="locale__flag" 
+                        @click="switchLocale(locale.code)"
                     >
-                    <div class="locale__text">
-                        {{ locale.code.toUpperCase() }}
+                        <img  
+                            :src="getFlagUrl(locale.code)" 
+                            class="locale__flag" 
+                        >
+                        <div class="locale__text">
+                            {{ locale.code.toUpperCase() }}
+                        </div>
                     </div>
                 </div>
+                <div class="backdrop" />
             </div>
-            <div class="backdrop" />
-        </div>
+        </transition>
         
         <div 
             class="locale__current" 
@@ -158,7 +160,11 @@ $selector-backdrop: #363636;
         border: 2px solid;
         border-color: $selector-white;
         border-radius: 7px;
+
+        transition: border-color 0.25s;
     }
+
+    transition: background-color 0.25s, color 0.25s;
 
     &:hover {
         background-color: $selector-white;
@@ -168,5 +174,12 @@ $selector-backdrop: #363636;
             border-color: black;
         }
     }
+}
+
+.fade-enter-active, .fade-leave-active {
+    transition: opacity .25s;
+}
+.fade-enter, .fade-leave-to {
+    opacity: 0;
 }
 </style>
