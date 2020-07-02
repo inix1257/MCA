@@ -37,7 +37,7 @@ async function isNotEligible(ctx: ParameterizedContext<any, Router.IRouterParamC
 async function isEligibleCurrentYear(ctx, next): Promise<void> {
     const currentYear = new Date().getFullYear() - 1;
     
-    if (ctx.state.user.mca.find(e => e.year === currentYear)) {
+    if (ctx.state.user.mcaEligibility.find(e => e.year === currentYear)) {
         return await next();
     }
     
@@ -49,29 +49,29 @@ async function isEligibleCurrentYear(ctx, next): Promise<void> {
 function isEligibleFor(user, modeID): boolean {
     const currentYear = new Date().getFullYear() - 1;
 
-    for (const eligibility of user.mca) {
+    for (const eligibility of user.mcaEligibility) {
         if (eligibility.year === currentYear) {
             let isModeEligible = false;
 
             switch (modeID) {
                 case ModeDivisionType.Standard:
-                    isModeEligible = user.mca.some(e => e.standard && e.year == currentYear);
+                    isModeEligible = user.mcaEligibility.some(e => e.standard && e.year == currentYear);
                     break;
 
                 case ModeDivisionType.Mania:
-                    isModeEligible = user.mca.some(e => e.mania && e.year == currentYear);
+                    isModeEligible = user.mcaEligibility.some(e => e.mania && e.year == currentYear);
                     break;
             
                 case ModeDivisionType.Taiko:
-                    isModeEligible = user.mca.some(e => e.taiko && e.year == currentYear);
+                    isModeEligible = user.mcaEligibility.some(e => e.taiko && e.year == currentYear);
                     break;
             
                 case ModeDivisionType.Fruits:
-                    isModeEligible = user.mca.some(e => e.fruits && e.year == currentYear);
+                    isModeEligible = user.mcaEligibility.some(e => e.fruits && e.year == currentYear);
                     break;
 
                 case ModeDivisionType.Storyboard:
-                    isModeEligible = user.mca.some(e => e.storyboard && e.year == currentYear);
+                    isModeEligible = user.mcaEligibility.some(e => e.storyboard && e.year == currentYear);
                     break;
             }
 
