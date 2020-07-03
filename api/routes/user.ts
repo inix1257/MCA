@@ -5,7 +5,7 @@ import { isLoggedIn } from "../../../CorsaceServer/middleware";
 import { isNotEligible } from "../middleware";
 import { Config } from "../../../config";
 import axios from "axios";
-import { GuestRequest, Status } from "../../../CorsaceModels/MCA_AYIM/guestRequest";
+import { GuestRequest, RequestStatus } from "../../../CorsaceModels/MCA_AYIM/guestRequest";
 import { ModeDivision } from "../../../CorsaceModels/MCA_AYIM/modeDivision";
 
 const UserRouter = new Router();
@@ -68,7 +68,7 @@ UserRouter.post("/guestDifficulty/:year", isLoggedIn, isNotEligible, async (ctx)
     // Create guest requesst
     const guestReq = new GuestRequest;
     guestReq.mode = await ModeDivision.findOneOrFail(parseInt(beatmap.mode)+1);
-    guestReq.accepted = Status.Pending;
+    guestReq.accepted = RequestStatus.Pending;
     guestReq.beatmap = dbMap;
     guestReq.year = parseInt(ctx.params.year);
     await guestReq.save();
