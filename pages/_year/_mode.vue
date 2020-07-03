@@ -144,6 +144,7 @@ export default Vue.extend({
         },
     },
     mounted () {
+        console.log(this.$route.params);
         this.selectedMode = this.$route.params.mode || "standard";
         let days = 0;
 
@@ -219,7 +220,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     &__wheel-img {
         width: 950px;
         height: 950px;
-        background: url("../../CorsaceAssets/img/ayim-mca/wheel.png") no-repeat center;
+        background: url("../../../CorsaceAssets/img/ayim-mca/wheel.png") no-repeat center;
         background-size: cover;
         left: -730px;
         top: -400px;
@@ -452,7 +453,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
 
         &__mode {
             &--#{$mode} {
-                background-image: url("../../CorsaceAssets/img/ayim-mca/#{$mode}.png");
+                background-image: url("../../../CorsaceAssets/img/ayim-mca/#{$mode}.png");
 
                 &::before {
                     border-bottom: 3px solid var(--#{$mode});
