@@ -102,8 +102,8 @@
                 >
                     <nuxt-link
                         v-for="mode in modes"
-                        :key="mode"                        
-                        :to="`/${mode}`"
+                        :key="mode"
+                        :to="{ params: { mode }}"
                         class="mode-selection__mode"
                         :class="[`mode-selection__mode--${mode}`, (selectedMode == mode) ? `mode-selection__mode--${mode}-selected` : '']"
                     />
@@ -144,7 +144,8 @@ export default Vue.extend({
         },
     },
     mounted () {
-        console.log(this.$route.params);
+        if (/^(standard|taiko|fruits|mania|storyboard)$/.test(this.$route.params.year))
+            this.$router.push({ params: { year: "/", mode: this.$route.params.year } });
         this.selectedMode = this.$route.params.mode || "standard";
         let days = 0;
 
