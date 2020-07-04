@@ -50,6 +50,10 @@ export default Vue.extend({
         text-align: center;
         transition: background-color 0.25s, color 0.25s;
 
+        &:last-child {
+            border-radius: 0 0 10px 10px;
+        }
+
         &:hover {
             background-color: white;
             color: #0f0f0f;
