@@ -2,6 +2,13 @@
     <div v-if="loaded">
         <headerComponent 
             :user="user"
+            :dropdown="dropdown"
+            @dropdown="dropdown=!dropdown"
+        />
+        <dropdownComponent
+            v-if="dropdown"
+            :user="user"
+            @click="dropdown=false"
         />
         <nuxt 
             :user="user" 
@@ -15,17 +22,20 @@
 import axios from "axios";
 
 import header from "../components/header/header";
+import dropdown from "../components/dropdown";
 import footer from "../components/footer/footer";
 
 export default {
     components: {
         "headerComponent": header,
+        "dropdownComponent": dropdown,
         "footerComponent": footer,
     },
     data () {
         return {
             loaded: false,
             user: null,
+            dropdown: false,
             eligible: false,
         };
     },

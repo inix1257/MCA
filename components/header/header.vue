@@ -33,14 +33,14 @@
             </div>
             <div
                 class="header__login--profile header__login--flex" 
-                @click="logout=!logout"
+                @click="toggleDropdown"
             >
                 <img 
                     :src="avatarURL"
                     class="header__login--image"
                 >
                 <div 
-                    :class="{'triangle--active': logout}"
+                    :class="{'triangle--active': dropdown}"
                     class="triangle" 
                 />
             </div>
@@ -51,16 +51,6 @@
             :user="user"
             @close="login=false; $router.push({ path: $route.path })"
         />
-        <transition name="fade">
-            <a 
-                v-if="logout"
-                class="header__logout"
-                href="/api/logout"
-                @click="logout=!logout"
-            >
-                {{ $t('mca_ayim.header.logout') }}
-            </a>
-        </transition>
     </div>
 </template>
 
@@ -78,11 +68,11 @@ export default {
                 return {};
             },
         },
+        dropdown: Boolean,
     },
     data () {
         return {
             login: false,
-            logout: false,
         };
     },
     computed:  {
@@ -93,6 +83,11 @@ export default {
     mounted: function () {
         if (this.$route.query.login && (!this.user || (this.user && (!this.user.osu.userID || !this.user.discord.userID))))
             this.login = true;
+    },
+    methods: {
+        toggleDropdown() {
+            this.$emit("dropdown");
+        },
     },
 };
 </script>
@@ -171,32 +166,5 @@ export default {
 		border-radius: 50%;
 		width: 50%;
 	}
-}
-
-.header__logout {
-    letter-spacing: 5px;
-	position: absolute;
-    cursor: pointer;
-	right: 0;
-	bottom: -52%;
-    background-color: #0f0f0f;
-    border-radius: 0 0 10px 10px;
-    box-shadow: 0px 0px 8px white;
-    padding: 1% 4%;
-    margin-right: 2%;
-    color: white;
-    transition: background-color 0.25s, color 0.25s;
-
-    &:hover {
-        background-color: white;
-        color: #0f0f0f;
-    }
-}
-
-.fade-enter-active, .fade-leave-active {
-    transition: opacity .25s;
-}
-.fade-enter, .fade-leave-to {
-    opacity: 0;
 }
 </style>
