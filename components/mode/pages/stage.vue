@@ -484,7 +484,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     }
 
     &Area {
-        height: 281px;
+        height: 30vh;
         position: relative;
     }
 
@@ -508,7 +508,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     }
 }
 
-@media (max-width: 1418px) {  
+@media (max-width: 1418px) and (min-width: 1065px) {  
     .category__head {
         &Shapes {
             width: 111px;
@@ -533,7 +533,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     } 
 }
 
-@media (max-width: 1319px) {
+@media (max-width: 1319px) and (min-width: 1065px) {
     .category__head {
         &Shapes {
             display: none;
@@ -546,7 +546,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     }
 }
 
-@media (max-width: 1205px) {
+@media (max-width: 1205px) and (min-width: 1065px) {
     .category__head {
         &Title {
             font-size: 4rem;
@@ -557,7 +557,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     }
 }
 
-@media (max-width: 1104px) {
+@media (max-width: 1104px) and (min-width: 1065px) {
     .category__head {
         &Title {
             font-size: 3.6rem;
@@ -566,14 +566,22 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
 }
 
 @media (max-width: 1065px) {
+    .stage {
+        flex-wrap: wrap;
+    }
+
     .stage__category {
-        white-space: normal;
-        
-        max-height: 96px;
+        max-height: 77px;
 
         &--active {
             max-height: 396px;
         }
+    }
+
+    .stage__categories {
+        flex: 0 0 100%;
+
+        padding-bottom: 10px;
     }
 }
 </style>

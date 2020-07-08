@@ -104,6 +104,8 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
 .mode-wrapper {
     display: flex;
     flex-direction: column;
+
+    margin-bottom: 6%;
     padding-left: 2%;
 }
 

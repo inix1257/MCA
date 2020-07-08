@@ -2,7 +2,7 @@
     <div class="header">
         <img src="../../../CorsaceAssets/img/ayim-mca/site/2019.png">
         <nuxt-link
-            class="header__title--active"
+            class="header__title header__title--active"
             :to="'/'"
             v-html="$t('mca_ayim.header.mca')"
         />
@@ -128,18 +128,14 @@ export default Vue.extend({
 }
 
 .header__title {
-	font-size: 25px;
+	font-size: 1.5rem;
 	line-height: 0.86;
 	letter-spacing: 10px;
 	color: #4c4c4c;
 	margin-left: 3%;
 
 	&--active {
-		font-size: 25px;
-		line-height: 0.86;
-		letter-spacing: 10px;
 		color: #fff;
-		margin-left: 3%;
 	}
 }
 
@@ -161,6 +157,7 @@ export default Vue.extend({
 	}
 
 	&--gray {
+    white-space: nowrap;
 		font-size: 1rem;
 		color: #6f6f6f;
 	}
@@ -172,12 +169,30 @@ export default Vue.extend({
 	&--profile {
 		display: flex;
 		align-items: center;
-        justify-content: space-evenly;
+    justify-content: space-evenly;
 	}
 
 	&--image {
 		border-radius: 50%;
+
 		width: 50%;
+    min-width: 45px;
+
+    padding-right: 10px;
 	}
+}
+
+@media (max-width: 1080px) {
+    .header__title {
+        font-size: 1rem;
+    }
+
+    .header__login {
+        font-size: 0.8rem;
+
+        &--gray {
+            font-size: 0.7rem;
+        }
+    }
 }
 </style>

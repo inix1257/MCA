@@ -54,10 +54,6 @@ export default Vue.extend({
             border-radius: 0 0 10px 10px;
         }
 
-        &:last-child {
-            border-radius: 0 0 10px 10px;
-        }
-
         &:hover {
             background-color: white;
             color: #0f0f0f;
