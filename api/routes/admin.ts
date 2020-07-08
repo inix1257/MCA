@@ -1,8 +1,7 @@
 import Router from "koa-router";
 import { isLoggedInDiscord, isCorsace } from "../../../CorsaceServer/middleware";
 import { Vote } from "../../../CorsaceModels/MCA_AYIM/vote";
-import { CategorySectionType } from "../../../CorsaceModels/MCA_AYIM/categorySection";
-import { Category } from "../../../CorsaceModels/MCA_AYIM/category";
+import { Category, CategoryType } from "../../../CorsaceModels/MCA_AYIM/category";
 
 const adminRouter = new Router();
 
@@ -57,7 +56,7 @@ function getTotalFirstChoicesInCategory(votes: Vote[], categoryID: number): Cate
 
         // check if already in categorySum
         const i = categorySum.findIndex(s => 
-            (vote.category.sectionID == CategorySectionType.Beatmapsets ? 
+            (vote.category.type == CategoryType.Beatmapsets ? 
                 (s.beatmapsetID == vote.beatmapsetID) : 
                 (s.userID == vote.userID)
             )
@@ -147,7 +146,7 @@ adminRouter.get("/results", async (ctx) => {
                     }
     
                     if (category.ID == vote.category.ID &&
-                        (vote.category.sectionID == CategorySectionType.Beatmapsets ? 
+                        (vote.category.type == CategoryType.Beatmapsets ? 
                             (vote.beatmapsetID == lowCategoryResult.beatmapsetID) : 
                             (vote.userID == lowCategoryResult.userID)
                         )

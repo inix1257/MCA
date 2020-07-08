@@ -16,7 +16,7 @@
         <div class="login__auth">
             <img src="../../../CorsaceAssets/img/osu.png">
             <a 
-                v-if="!user || (user && !user.osu.userID)"
+                v-if="!user || !user.osu || !user.osu.username"
                 class="login__authText"
                 :href="'/api/login/osu?url=' + $route.fullPath"
             >
@@ -36,7 +36,7 @@
         <div class="login__auth">
             <img src="../../../CorsaceAssets/img/ayim-mca/site/discord.png">
             <a 
-                v-if="!user || (user && !user.discord.userID)"
+                v-if="!user || !user.discord || !user.discord.username"
                 class="login__authText"
                 href="/api/login/discord"
             >

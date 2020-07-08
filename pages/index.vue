@@ -32,107 +32,44 @@
         </div>
 
         <div class="right-side">
-            <div class="mode-title">
-                {{ selectedMode }} | {{ $t('mca_ayim.main.nominating') }}
-            </div>
-
-            <div
-                class="mode-container"
-                :class="`mode-container--${selectedMode}`"
-            >
-                <div class="mode-container__general">
-                    <div class="ranked-sets">
-                        <small>{{ $t('mca_ayim.main.rankedSets') }}</small>
-                        <div class="ranked-sets__divider" />
-                        <div class="ranked-sets__content">
-                            0000000
-                        </div>
-                    </div>
-
-                    <div
-                        class="vote-now"
-                        :class="`vote-now--${selectedMode}`"
-                    >
-                        {{ $t('mca_ayim.main.voteNow') }} <span>>></span>
-                    </div>
-                </div>
-
-                <div class="categories">
-                    <div
-                        v-for="i in 2"
-                        :key="i"
-                        class="categories__list"
-                    >
-                        <div class="categories__category-title">
-                            {{ $t('mca_ayim.main.categories.map') }}
-                        </div>
-                        <div
-                            v-for="j in 6"
-                            :key="j"
-                            class="categories__category-award"
-                        >
-                            grand award
-                        </div>
-                    </div>
-                </div>
-                    
-                <div class="organizers">
-                    <div class="organizers__title">
-                        <small>{{ $t('mca_ayim.main.organized') }}</small>
-                    </div>
-                    <div class="organizers__content">
-                        person a, person b, person c, person d, person e
-                    </div>
-                </div>
-
-                <div
-                    class="mode-selection" 
-                    :class="`mode-selection--${selectedMode}`"
-                >
-                    <div
-                        v-for="mode in modes"
-                        :key="mode"
-                        class="mode-selection__mode"
-                        :class="[`mode-selection__mode--${mode}`, (selectedMode == mode) ? `mode-selection__mode--${mode}-selected` : '']"
-                        @click="setMode(mode)"
-                    />
-                </div>
-            </div>
+            <modeSwitcher 
+                :page="'index'"
+                :selected-mode="mode"
+                @mode="updateMode"
+            />
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import axios from "axios";
 import Vue from "vue";
+import modeSwitcher from "../components/mode/modeSwitcher.vue";
 
 export default Vue.extend({
-    props: {
-        user: {
-            type: Object,
-            default: () => {
-                return {};
-            },
-        },
-        eligible: Boolean,
+    components: {
+        "modeSwitcher": modeSwitcher,
     },
     data () {
         return {
             value: "0%",
-            startDate: new Date("2020-08-01"),
-            selectedMode: "standard",
-            modes: ["standard", "taiko", "fruits", "mania", "storyboard"],
+            startDate: new Date("2020-07-29"),
         };
     },
     computed: {
         remainingDays (): number {
             return Math.floor((+this.startDate - Date.now()) / (1000*60*60*24));
         },
+        mode () {
+            return this.$parent.$attrs.mode;
+        },
+        eligible () {
+            return this.$parent.$attrs.eligible;
+        },
+        user () {
+            return this.$parent.$attrs.user;
+        },
     },
     mounted () {
-        const localMode = localStorage.getItem("mode");
-        if (localMode && /^(standard|taiko|fruits|mania|storyboard)$/.test(localMode))
-            this.selectedMode = localMode;
         let days = 0;
 
         if (this.remainingDays > 31) {
@@ -149,29 +86,14 @@ export default Vue.extend({
         }
     },
     methods: {
-        setMode(mode) {
-            if (/^(standard|taiko|fruits|mania|storyboard)$/.test(mode)) {
-                localStorage.setItem("mode", mode);
-                this.selectedMode = mode;
-            }
-        },
-        async run () {
-            const res = (await axios.post(`/api/user/guestDifficulty/2019`, {
-                url: "https://osu.ppy.sh/beatmapsets/809748#osu/1699094",
-            })).data;
-            if (res.error) {
-                this.value = res.error;
-            } else {
-                this.value = "Success!";
-            }
+        updateMode (val) {
+            this.$parent.$emit("mode", val);
         },
     },
 });
 </script>
 
 <style lang="scss">
-$modes: "storyboard", "mania" , "fruits", "taiko", "standard";
-
 .home {
     width: 100%;
     height: 100%;
@@ -263,232 +185,10 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
 }
 
 .right-side {
-    padding-left: 20px;
     flex: 0 0 100%;
     width: 100%;
     display: flex;
     flex-direction: column;
-}
-
-.mode-title {
-    font-family: 'Lexend Peta';
-    font-size: 2rem;
-    text-shadow: 0 0 4px white;
-    margin: 5% 25px 10px auto;
-}
-
-@mixin mode-container {
-    @each $mode in $modes {
-        &--#{$mode} {
-            border-top: 3px solid var(--#{$mode});
-
-            &::before {
-                border-left: 3px solid var(--#{$mode});
-            }
-        }
-    }
-}
-
-%spaced-container {
-    margin-bottom: 40px;
-    display: flex;
-    justify-content: space-around;
-}
-
-.mode-container {
-    @include mode-container;
-
-    border-top-left-radius: 25px;
-    padding: 25px;
-    position: relative;
-
-    &::before {
-        content: "";
-        position: absolute;
-        top: -2px;
-        left: -3px;
-        border-bottom-left-radius: 25px;
-        border-top-left-radius: 25px;
-        width: 100%;
-        height: calc(100% - 45px);
-        z-index: -1;
-    }
-
-    &__general {
-        @extend %spaced-container;
-        flex-wrap: wrap;
-
-        @media (min-width: 1200px) {
-            flex-wrap: nowrap;
-        }
-    }
-
-    &__stats {
-        margin-bottom: 20px;
-
-        @media (min-width: 1200px) {
-            flex-wrap: nowrap;
-        }
-    }
-}
-
-.categories {
-    @extend %spaced-container;
-
-    &__category-title {
-        border-bottom: 2px solid #fff;
-        margin-bottom: 15px;
-        font-weight: bold;
-        font-size: 1.5rem;
-    }
-
-    &__category-award {
-        margin-bottom: 8px;
-    }
-}
-
-%half-box {
-    border-radius: 15px; 
-    background-color: rgba(0, 0, 0, 0.7); 
-    padding: 5px 20px;
-    display: flex;
-    flex: 1 1 100%;
-    
-    @media (min-width: 1200px) {
-        flex-wrap: nowrap;
-        flex: 1 1 50%;
-    }
-}
-
-.ranked-sets {
-    @extend %half-box;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-
-    &__divider {
-        border-left: 0.7px solid white;
-        width: 1px;
-        height: 80%;
-        margin-left: 10px;
-        margin-right: 10px;
-    }
-
-    &__content {
-        font-family: Scoreboard;
-        font-size: 2.6rem
-    }
-
-    @media (min-width: 1200px) {
-        margin-right: 10px;
-        margin-bottom: 0px;
-    }
-}
-
-@mixin mode-vote-color {
-    @each $mode in $modes {
-        &--#{$mode} {
-            color: var(--#{$mode});
-            background: linear-gradient(135deg,#222 0%, #222 20%, white 20%, white 22%, #222 22%, #222 24%, white 24%, white 26%, var(--#{$mode}) 26%, var(--#{$mode}) 28%, white 28%);
-        }
-    }
-}
-
-.vote-now {
-    @extend %half-box;
-    cursor: pointer;
-    font-style: italic;
-    font-size: 1.7rem;
-    justify-content: flex-end;
-    align-items: center;
-    text-shadow: 1px 1px 3px #222;
-    font-weight: 900;
-    letter-spacing: 1.2px;
-    background-color: white;
-
-    span {
-        margin-left: 15px
-    }
-
-    @include mode-vote-color;
-    
-    @media (min-width: 1200px) {
-        margin-left: 10px;
-    }
-}
-
-.organizers {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 15px;
-    border-radius: 15px;
-    background-color: rgba(0, 0, 0, 0.66); 
-    padding: 8px;
-
-    &__title {
-        border-bottom: 1px solid white;
-    }
-
-    &__content {
-        padding: 25px;
-    }
-}
-
-@mixin mode-selection-border {
-    @each $mode in $modes {
-        $i: index($modes, $mode);
-
-        &--#{$mode} {
-            &::before {
-                border-bottom: 3px solid var(--#{$mode});
-                // - icon size + border margin - icon margin
-                width: calc(100% - 45px * #{$i} + 28px - 15px * #{$i - 1});
-            }
-        }
-
-        &__mode {
-            &--#{$mode} {
-                background-image: url("../../CorsaceAssets/img/ayim-mca/#{$mode}.png");
-
-                &::before {
-                    border-bottom: 3px solid var(--#{$mode});
-                }
-            }
-
-            &--#{$mode}-selected {
-                background-color: var(--#{$mode});
-            }
-        }
-    }
-}
-
-.mode-selection {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-    position: relative;
-    @include mode-selection-border;
-
-    &__mode {
-        cursor: pointer;
-        width: 45px;
-        height: 45px;
-        background-repeat: no-repeat;
-        background-size: cover;
-        border-radius: 100%;
-        margin-left: 15px;
-    }
-
-    &::before {
-        content: "";
-        position: absolute;
-        bottom: 50%;
-        left: -28px;
-        z-index: -1;
-        border-bottom-left-radius: 25px;
-        height: 100%;
-    }
-
 }
 
 @media (min-width: 992px) {    

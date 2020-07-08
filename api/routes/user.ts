@@ -12,7 +12,7 @@ const UserRouter = new Router();
 const config = new Config();
 
 UserRouter.get("/", isLoggedIn, async (ctx) => {
-    ctx.body = { user: await ctx.state.user.getInfo() };
+    ctx.body = { user: await ctx.state.user.getMCAInfo() };
 });
 
 UserRouter.post("/guestDifficulty/:year", isLoggedIn, isNotEligible, async (ctx) => {

@@ -161,10 +161,10 @@ $selector-backdrop: #363636;
         border-color: $selector-white;
         border-radius: 7px;
 
-        transition: border-color 0.25s;
+        transition: border-color 0.25s ease-out;
     }
 
-    transition: background-color 0.25s, color 0.25s;
+    transition: background-color 0.25s ease-out, color 0.25s ease-out;
 
     &:hover {
         background-color: $selector-white;
@@ -177,7 +177,7 @@ $selector-backdrop: #363636;
 }
 
 .fade-enter-active, .fade-leave-active {
-    transition: opacity .25s;
+    transition: opacity .25s ease-out;
 }
 .fade-enter, .fade-leave-to {
     opacity: 0;

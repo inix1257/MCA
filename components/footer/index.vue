@@ -18,9 +18,9 @@
             >
 
             <div class="footer__socials">
-                <a href="https://twitter.com/vinxis1"> <img src="../../../CorsaceAssets/img/ayim-mca/site/twitter.png"> </a>
-                <a href="https://open.corsace.io/discord.94b52bb5.png"><img src="../../../CorsaceAssets/img/ayim-mca/site/discord.png"></a>
-                <a href="https://open.corsace.io/twitch.6a390bfe.png"><img src="../../../CorsaceAssets/img/ayim-mca/site/ttv.png"></a>
+                <a href="https://twitter.com/corsace_"> <img src="../../../CorsaceAssets/img/ayim-mca/site/twitter.png"> </a>
+                <a href="https://discord.gg/Z6vEMsr"><img src="../../../CorsaceAssets/img/ayim-mca/site/discord.png"></a>
+                <a href="https://www.twitch.tv/corsace"><img src="../../../CorsaceAssets/img/ayim-mca/site/ttv.png"></a>
             </div>
         </div>
 
@@ -28,14 +28,16 @@
     </div>
 </template>
 
-<script>
-import languageSwitch from "./languageSwitch";
+<script lang="ts">
+import Vue from "vue";
 
-export default {
+import languageSwitch from "./languageSwitch.vue";
+
+export default Vue.extend({
     components: {
         "languageSwitch": languageSwitch,
     },
-};
+});
 </script>
 
 <style lang="scss">

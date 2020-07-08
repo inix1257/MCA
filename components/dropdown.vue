@@ -7,9 +7,9 @@
             <nuxt-link :to="'/staff/requests'">
                 REQUESTS
             </nuxt-link>
-            <nuxt-link :to="'/api/logout'">
+            <a href="/api/logout">
                 {{ $t('mca_ayim.header.logout') }}
-            </nuxt-link>
+            </a>
         </div>
     </transition>
 </template>
@@ -48,7 +48,11 @@ export default Vue.extend({
         color: white;
         text-decoration: none;
         text-align: center;
-        transition: background-color 0.25s, color 0.25s;
+        transition: background-color 0.25s ease-out, color 0.25s ease-out;
+
+        &:last-child {
+            border-radius: 0 0 10px 10px;
+        }
 
         &:last-child {
             border-radius: 0 0 10px 10px;
@@ -62,7 +66,7 @@ export default Vue.extend({
 }
 
 .fade-enter-active, .fade-leave-active {
-    transition: opacity .25s;
+    transition: opacity .25s ease-out;
 }
 .fade-enter, .fade-leave-to {
     opacity: 0;

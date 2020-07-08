@@ -1,10 +1,9 @@
 import Router from "koa-router";
 import { hasRole, isLoggedInDiscord } from "../../../../CorsaceServer/middleware";
-import { Category } from "../../../../CorsaceModels/MCA_AYIM/category";
+import { Category, CategoryType } from "../../../../CorsaceModels/MCA_AYIM/category";
 import { ModeDivision } from "../../../../CorsaceModels/MCA_AYIM/modeDivision";
 import { ParameterizedContext, Next } from "koa";
 import { Beatmapset } from "../../../../CorsaceModels/MCA_AYIM/beatmapset";
-import { CategorySectionType } from "../../../../CorsaceModels/MCA_AYIM/categorySection";
 
 async function validateBody(ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<any> {
     const name = ctx.request.body.name.trim();
@@ -57,7 +56,7 @@ categoriesRouter.post("/create", validateBody, async (ctx) => {
     const category = new Category();
     category.name = ctx.state.categoryName;
     category.isAutomatic = false;
-    category.sectionID = CategorySectionType.Beatmapsets;
+    category.type = CategoryType.Beatmapsets;
     category.mode = ctx.state.categoryMode;
     category.maxNominations = ctx.request.body.maxNominations || 1;
     category.isRequired = ctx.request.body.isRequired;

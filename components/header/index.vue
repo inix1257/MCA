@@ -1,9 +1,9 @@
 <template>
     <div class="header">
         <img src="../../../CorsaceAssets/img/ayim-mca/site/2019.png">
-        <a
+        <nuxt-link
             class="header__title--active"
-            :href="'/'"
+            :to="'/'"
             v-html="$t('mca_ayim.header.mca')"
         />
         <a class="header__seperator"><img src="../../../CorsaceAssets/img/ayim-mca/site/l.png"></a>
@@ -12,15 +12,8 @@
             href="ayim.html"
             v-html="$t('mca_ayim.header.ayim')"
         />
-        <a
-            v-if="!user"
-            class="header__login"
-            @click="login=!login; $router.push({ path: $route.path, query: { login: true }})"
-        >
-            {{ $t('mca_ayim.header.login') }}
-        </a>
         <div 
-            v-else
+            v-if="user && user.osu"
             class="header__login"
         >
             <div class="header__login--text header__login--flex">
@@ -40,11 +33,18 @@
                     class="header__login--image"
                 >
                 <div 
-                    :class="{'triangle--active': dropdown}"
+                    :class="triangleClass"
                     class="triangle" 
                 />
             </div>
         </div>
+        <a
+            v-else
+            class="header__login"
+            @click="login=!login; $router.push({ path: $route.path, query: { login: true }})"
+        >
+            {{ $t('mca_ayim.header.login') }}
+        </a>
 
         <login 
             v-if="login"
@@ -54,34 +54,47 @@
     </div>
 </template>
 
-<script>
-import login from "./login";
+<script lang="ts">
+import Vue, { PropOptions } from "vue";
 
-export default {
+import login from "./login.vue";
+
+import { UserMCAInfo } from "../../../CorsaceModels/user";
+
+export default Vue.extend({
     components: {
         "login": login,
     },
     props: {
         user: {
             type: Object,
-            default: () => {
-                return {};
-            },
-        },
+            required: true,
+        } as PropOptions<UserMCAInfo>,
         dropdown: Boolean,
+        mode: {
+            type: String,
+            default: "standard",
+        },
     },
     data () {
         return {
             login: false,
+            modes: ["standard", "taiko", "fruits", "mania", "storyboard"],
         };
     },
     computed:  {
-        avatarURL: function ()  {
+        avatarURL (): string  {
             return this.user && this.user.osu ? this.user.osu.avatar + "?" + Math.round(Math.random()*1000000) : "";
+        },
+        triangleClass (): Record<string, any>  {
+            const className = `triangleActive--${this.mode}`;
+            const obj = {};
+            obj[className] = this.dropdown;
+            return obj;
         },
     },
     mounted: function () {
-        if (this.$route.query.login && (!this.user || (this.user && (!this.user.osu.userID || !this.user.discord.userID))))
+        if (this.$route.query.login && (!this.user?.osu?.userID || !this.user?.discord?.userID))
             this.login = true;
     },
     methods: {
@@ -89,7 +102,7 @@ export default {
             this.$emit("dropdown");
         },
     },
-};
+});
 </script>
 
 <style lang="scss">

@@ -1,10 +1,9 @@
 import Router from "koa-router";
 import { isLoggedInOsu } from "../../../CorsaceServer/middleware";
 import { Nomination } from "../../../CorsaceModels/MCA_AYIM/nomination";
-import { Category } from "../../../CorsaceModels/MCA_AYIM/category";
+import { Category, CategoryType } from "../../../CorsaceModels/MCA_AYIM/category";
 import { Beatmapset } from "../../../CorsaceModels/MCA_AYIM/beatmapset";
 import { User } from "../../../CorsaceModels/user";
-import { CategorySectionType } from "../../../CorsaceModels/MCA_AYIM/categorySection";
 import { isEligibleFor, isEligibleCurrentYear } from "../middleware";
 
 async function isNominationPhase(ctx, next): Promise<any> {
@@ -60,7 +59,7 @@ nominationsRouter.post("/create", async (ctx) => {
     let beatmapset: Beatmapset;
     let user: User;
 
-    if (category.sectionID == CategorySectionType.Beatmapsets) {
+    if (category.type == CategoryType.Beatmapsets) {
         beatmapset = await Beatmapset.findOneOrFail(ctx.request.body.nomineeId, {
             relations: ["beatmaps"],
         });
@@ -83,7 +82,7 @@ nominationsRouter.post("/create", async (ctx) => {
         }
 
         nomination.beatmapset = beatmapset;
-    } else if (category.sectionID == CategorySectionType.Users) {
+    } else if (category.type == CategoryType.Users) {
         user = await User.findOneOrFail(ctx.request.body.nomineeId);
 
         if (!isEligibleFor(user, category.modeID)) {
@@ -106,7 +105,7 @@ nominationsRouter.post("/create", async (ctx) => {
         };
     }
 
-    if (nominations.find(n => (beatmapset ? n.beatmapsetID === beatmapset.ID : n.userID === user.ID))) {
+    if (nominations.find(n => (beatmapset ? n.beatmapset?.ID === beatmapset.ID : n.user?.ID === user.ID))) {
         return ctx.body = {
             error: "Already nominated", 
         };

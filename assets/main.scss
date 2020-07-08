@@ -3,6 +3,8 @@
     src: url("../../CorsaceAssets/fonts/scoreboard.ttf");
 }
 
+$modes: "storyboard", "mania" , "fruits", "taiko", "standard";
+
 :root {
     --standard: #fb2475;
     --taiko: #ff890a;
@@ -31,6 +33,15 @@ body {
 	font-size: 1rem;
 }
 
+@mixin mode-triangle {
+    @each $mode in $modes {
+        &--#{$mode} {
+            border-top: none;
+            border-bottom: 10px solid var(--#{$mode});
+        }
+    }
+}
+
 .triangle {
     width: 0;
     height: 0;
@@ -38,10 +49,9 @@ body {
     border-right: 5px solid transparent;
     border-top: 10px solid;
     border-bottom: none;
-    transition: all 0.25s;
+    transition: all 0.25s ease-out;
 
-    &--active {
-        border-top: none;
-        border-bottom: 10px solid #fb2475;
+    &Active {
+        @include mode-triangle;
     }
 }

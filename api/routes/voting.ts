@@ -1,9 +1,8 @@
 import Router from "koa-router";
 import { isLoggedInOsu } from "../../../CorsaceServer/middleware";
 import { Vote } from "../../../CorsaceModels/MCA_AYIM/vote";
-import { Category } from "../../../CorsaceModels/MCA_AYIM/category";
+import { Category, CategoryType } from "../../../CorsaceModels/MCA_AYIM/category";
 import { Nomination } from "../../../CorsaceModels/MCA_AYIM/nomination";
-import { CategorySectionType } from "../../../CorsaceModels/MCA_AYIM/categorySection";
 import { isEligibleCurrentYear, isEligibleFor } from "../middleware";
 import { MoreThan } from "typeorm";
 
@@ -77,13 +76,13 @@ votingRouter.post("/create", async (ctx) => {
     vote.voter = ctx.state.user;
     vote.category = nominee.category;
     
-    if (nominee.category.sectionID == CategorySectionType.Beatmapsets) {
+    if (nominee.category.type == CategoryType.Beatmapsets) {
         vote.beatmapset = nominee.beatmapset;
 
         if (categoryVotes.find(v => v.beatmapsetID == nominee.beatmapsetID)) {
             hasVoted = true;
         }
-    } else if (nominee.category.sectionID == CategorySectionType.Users) {
+    } else if (nominee.category.type == CategoryType.Users) {
         vote.user = nominee.user;
         
         if (categoryVotes.find(v => v.userID == nominee.userID)) {
