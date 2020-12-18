@@ -35,7 +35,7 @@ import languageSwitch from "./languageSwitch.vue";
 
 export default Vue.extend({
     components: {
-        "languageSwitch": languageSwitch,
+        languageSwitch,
     },
 });
 </script>

@@ -1,6 +1,7 @@
 <template>
     <div>
         <div
+            v-if="phase.phase && (phase.phase === 'nominating' || phase.phase === 'voting')"
             class="stage__remainingDays" 
             :class="`stage__remainingDays--${mode}`"
         >
@@ -19,7 +20,9 @@
         </div>
         <modeSwitcher
             :page="'stage'"
+            :phase="phase"
             :selected-mode="mode"
+            :user="user"
             @mode="updateMode"
         />
     </div>
@@ -27,126 +30,50 @@
 
 <script lang="ts">
 import Vue from "vue";
-import axios from "axios";
 import modeSwitcher from "../../components/mode/modeSwitcher.vue";
-
-interface Nomination {
-    ID: number;
-    category: Category;
-}
-
-interface Category {
-    ID: number;
-    sectionID: number;
-    mode: {
-        ID: number;
-    }
-}
-
-enum Stage {
-    Nomination,
-    Voting,
-}
 
 export default Vue.extend({
     validate ({ params }) {
-        return !params.stage || /^(nominations|nominate|vote|voting)$/.test(params.stage);
+        if (/^(nominating|nominate|vote|voting)$/i.test(params.year))
+        {
+            if (/^(nominating|nominate|vote|voting)$/i.test(params.stage))
+                return false;
+
+            params.stage = params.year;
+            params.year = ((new Date).getUTCFullYear()-1).toString();
+        }
+
+        return params.year && !/^20\d\d$/.test(params.year) ? false : /^(nominating|nominate|vote|voting)$/i.test(params.stage);
     },
     components: {
         "modeSwitcher": modeSwitcher,
     },
     data () {
         return {
-            startDate: new Date("2020-07-29"),
-            nominations: [] as Nomination[],
-            categories: [],
-            searchValue: "",
-            selectedCategory: null as null | Category,
-            results: [],
-            info: "",
-            stage: Stage.Nomination,
             modes: ["standard", "taiko", "fruits", "mania", "storyboard"],
         };
     },
     computed: {
         remainingDays (): string {
-            const date = Math.floor((+this.startDate - Date.now()) / (1000*60*60*24));
-
-            let text = "0" + date;
-            if (date > 9)
-                text = date.toString();
-            return text;
+            const date = Math.floor((this.phase.endDate - Date.now()) / (1000*60*60*24));
+            return date > 9 ? date.toString() : "0" + date;
+        },
+        eligible () {
+            return this.$parent.$attrs.eligible;
         },
         mode () {
             return this.$parent.$attrs.mode;
         },
-        eligible () {
-            return this.$parent.$attrs.eligible;
+        phase () {
+            return this.$parent.$attrs.phase as any;
         },
         user () {
             return this.$parent.$attrs.user;
         },
     },
-    mounted: async function() {
-        const res = await axios.get(`/api/nominations`);
-
-        if (!res.data.error) {
-            this.nominations = res.data.nominations;
-            this.categories = res.data.categories;
-        }
-    },
     methods: {
         updateMode (val) {
             this.$parent.$emit("mode", val);
-        },
-        async search () {
-            if (!this.selectedCategory) {
-                return;
-            }
-
-            let res;
-
-            if (this.selectedCategory.sectionID == 1) {
-                res = await axios.get(`/api/beatmapsets/search?mode=${this.selectedCategory.mode.ID}&keywords=${this.searchValue}`);
-            } else {
-                res = await axios.get(`/api/users/search?user=${this.searchValue}`);
-            }
-            
-            if (!res.data.error) {
-                this.results = res.data;
-            }
-        },
-        getNominations (categoryID: number) {
-            return this.nominations.filter(n => n.category.ID === categoryID);
-        },
-        async nominate (nomineeId: number) {
-            this.info = "";
-            
-            if (!this.selectedCategory) {
-                return;
-            }
-            
-            const res = await axios.post(`/api/nominations/create`, {
-                categoryId: this.selectedCategory?.ID,
-                nomineeId,
-            });
-
-            if (res.data.error) {
-                this.info = res.data.error;
-            } else {
-                this.nominations.push(res.data);
-            }
-        },
-        async remove (nominationID: number) {
-            this.info = "";
-            const res = await axios.post(`/api/nominations/${nominationID}/remove`);
-
-            if (res.data.error) {
-                this.info = res.data.error;
-            } else {
-                const i = this.nominations.findIndex(n => n.ID == nominationID);
-                this.nominations.splice(i, 1);
-            }
         },
     },
 });

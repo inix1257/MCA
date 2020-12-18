@@ -1,30 +1,24 @@
 import Router from "koa-router";
 import { isLoggedInOsu } from "../../../CorsaceServer/middleware";
+import { Timer } from "../../../CorsaceServer/utils/timer";
 import { Nomination } from "../../../CorsaceModels/MCA_AYIM/nomination";
-import { Category, CategoryType } from "../../../CorsaceModels/MCA_AYIM/category";
-import { Beatmapset } from "../../../CorsaceModels/MCA_AYIM/beatmapset";
-import { User } from "../../../CorsaceModels/user";
-import { isEligibleFor, isEligibleCurrentYear } from "../middleware";
+import { Category, CategoryType, CategoryStageInfo } from "../../../CorsaceModels/MCA_AYIM/category";
+import { Beatmapset, BeatmapsetInfo } from "../../../CorsaceModels/MCA_AYIM/beatmapset";
+import { User, UserCondensedInfo } from "../../../CorsaceModels/user";
+import { isEligibleFor, isEligibleCurrentYear, isPhaseStarted, isPhase, validatePhaseYear } from "../middleware";
+import { getRepository, Raw } from "typeorm";
+import { ModeDivisionType } from "../../../CorsaceModels/MCA_AYIM/modeDivision";
 
-async function isNominationPhase(ctx, next): Promise<any> {
-    const now = new Date();
-    
-    // edit this date according to schedule
-    if (now <= new Date(2020, 1, 1) || now >= new Date(2020, 4, 1)) {
-        return ctx.body = {
-            error: "Not the right time",
-        };
-    }
-
-    await next();
-}
+const timer = new Timer;
 
 const nominationsRouter = new Router();
 
 nominationsRouter.use(isLoggedInOsu);
-nominationsRouter.use(isNominationPhase);
+nominationsRouter.use(validatePhaseYear);
+nominationsRouter.use(isPhaseStarted("nomination"));
 
-nominationsRouter.get("/", async (ctx) => {
+nominationsRouter.get("/:year?", async (ctx) => {
+    timer.tick(false);
     const [nominations, categories] = await Promise.all([
         Nomination.find({
             where: {
@@ -32,23 +26,156 @@ nominationsRouter.get("/", async (ctx) => {
             },
             relations: ["beatmapset", "user", "category", "nominator"],
         }),
-        Category.find({}),
+        Category.find({
+            mca: {
+                year: ctx.state.year,
+            },
+        }),
     ]);
+
+    const categoryInfos: CategoryStageInfo[] = categories.map(x => {
+        const infos = x.getInfo() as CategoryStageInfo;
+        infos.count = nominations.filter(y => y.category.ID === x.ID).length;
+        return infos;
+    });
+
+    timer.tick();
+
+    timer.average();
 
     ctx.body = {
         nominations,
-        categories,
+        categories: categoryInfos,
     };
 });
 
-nominationsRouter.post("/create", async (ctx) => {
-    const category = await Category.findOneOrFail(ctx.request.body.categoryId, { 
-        relations: ["beatmapsets"],
-    });
+nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ctx) => {
+    timer.tick(false);
+
+    let list: BeatmapsetInfo[] | UserCondensedInfo[] = [];
+    let setList: BeatmapsetInfo[] = [];
+    let userList: UserCondensedInfo[] = [];
+    const category = await Category.findOneOrFail(ctx.params.category);
+
+    let mode = 1;
+    if (/\d+/.test(ctx.params.mode))
+        mode = parseInt(ctx.params.mode);
+    const modeString = ModeDivisionType[mode];
+
+    let skip = 0;
+    if (/\d+/.test(ctx.params.skip))
+        skip = parseInt(ctx.params.skip);
     
-    if (!isEligibleFor(ctx.state.user, category.modeID)) {
+    // Check if this is the intiial call, add nominations at the top of the list
+    if (skip === 0) {
+        const nominations = await Nomination.find({
+            nominator: ctx.state.user,
+            category,
+        });
+        if (category.type == CategoryType.Beatmapsets)
+            setList = nominations.map(nom => nom.beatmapset?.getInfo(true) as BeatmapsetInfo);  
+        else if (category.type == CategoryType.Users)
+            userList = nominations.map(nom => nom.user?.getCondensedInfo(true) as UserCondensedInfo);  
+    }
+    
+
+    if (!isEligibleFor(ctx.state.user, mode, ctx.state.year))
+        return ctx.body = { error: "Not eligible for this mode!" };
+    
+    try {
+        let count = 0;
+        if (category.type == CategoryType.Beatmapsets) {
+            let orderMethod = "beatmapset.approvedDate";
+            let ascDesc: any = "ASC";
+            if (/(artist|title|favs|creator|sr)/i.test(ctx.params.order.toLowerCase())) {
+                if (ctx.params.order.toLowerCase().includes("artist"))
+                    orderMethod = "beatmapset.artist";
+                else if (ctx.params.order.toLowerCase().includes("title"))
+                    orderMethod = "beatmapset.title";
+                else if (ctx.params.order.toLowerCase().includes("favs"))
+                    orderMethod = "beatmapset.favourites";
+                else if (ctx.params.order.toLowerCase().includes("creator"))
+                    orderMethod = "user_osuUsername";
+                else if (ctx.params.order.toLowerCase().includes("sr"))
+                    orderMethod = "beatmap.totalSR";
+            }
+
+            if (ctx.params.order.toLowerCase().includes("desc"))
+                ascDesc = "DESC";
+
+            let beatmapQueryBuilder = getRepository(Beatmapset)
+                .createQueryBuilder("beatmapset")
+                .leftJoinAndSelect("beatmapset.creator", "user")
+                .leftJoinAndSelect("user.otherNames", "otherName")
+                .innerJoinAndSelect("beatmapset.beatmaps", "beatmap", mode === 5 ? "beatmap.storyboard = :q" : "beatmap.mode = :q", { q: mode === 5 ? true : mode })
+                .where("beatmapset.approvedDate BETWEEN :start AND :end", { start: `${ctx.state.year}-01-01`, end: `${ctx.state.year+1}-01-01` });
+
+            if (ctx.query.text)
+                beatmapQueryBuilder = beatmapQueryBuilder
+                    .andWhere("beatmapset.ID LIKE :criteria OR beatmap.ID LIKE :criteria OR beatmapset.artist LIKE :criteria OR beatmapset.title LIKE :criteria OR beatmapset.tags LIKE :criteria OR beatmap.difficulty LIKE :criteria OR user.osuUsername LIKE :criteria OR user.osuUserID LIKE :criteria OR otherName.name LIKE :criteria", {criteria: `%${ctx.query.text}%`});
+                
+            setList.push(...await Promise.all((await beatmapQueryBuilder
+                .skip(skip)
+                .take(50)
+                .orderBy(orderMethod, ascDesc)
+                .getMany()).map(map => map.getInfo())));
+            list = setList;
+            count = await beatmapQueryBuilder.getCount();
+        } else if (category.type == CategoryType.Users) {
+            let orderMethod: any = "CAST(user_osuUserID AS INT)";
+            let ascDesc: any = "ASC";
+            if (ctx.params.order.toLowerCase().includes("alph"))
+                orderMethod = "user_osuUsername";
+
+            if (ctx.params.order.toLowerCase().includes("desc"))
+                ascDesc = "DESC";
+
+            let userQueryBuilder = getRepository(User)
+                .createQueryBuilder("user")
+                .leftJoinAndSelect("user.otherNames", "otherName")
+                .innerJoinAndSelect("user.mcaEligibility", "mca", `mca.year = :q AND mca.${modeString} = 1`, { q: ctx.state.year });
+
+            if (ctx.query.text)
+                userQueryBuilder = userQueryBuilder
+                    .andWhere("user.osuUsername LIKE :criteria OR user.osuUserID LIKE :criteria OR otherName.name LIKE :criteria", {criteria: `%${ctx.query.text}%`});
+
+            userList.push(...await Promise.all((await userQueryBuilder
+                .skip(skip)
+                .take(50)
+                .orderBy(orderMethod, ascDesc)
+                .getMany()).map(user => user.getCondensedInfo())));
+            list = userList;
+            count = await userQueryBuilder.getCount();
+        } else
+            return ctx.body = { error: "Invalid type parameter. Only 'beatmapsets' or 'users' are allowed."};
+
+        timer.tick();
+
+        timer.average();
+
+        ctx.body = {list, count};
+    } catch (err) {
+        console.error(err);
+        ctx.body = err;
+    }
+});
+
+nominationsRouter.post("/create", isPhase("nomination"), isEligibleCurrentYear, async (ctx) => {
+    const category = await Category.findOneOrFail(ctx.request.body.categoryId);
+    
+    if (!isEligibleFor(ctx.state.user, category.mode.ID, new Date().getFullYear() - 1))
         return ctx.body = { 
             error: "You weren't active for this mode",
+        };
+    
+    const nominations = await Nomination.find({
+        nominator: ctx.state.user,
+        category,
+    });
+
+    if (nominations.length >= category.maxNominations) {
+        return ctx.body = { 
+            error: "Reached max nominations", 
         };
     }
 
@@ -64,51 +191,28 @@ nominationsRouter.post("/create", async (ctx) => {
             relations: ["beatmaps"],
         });
 
-        // sbs categories
-        if (!category.isAutomatic && !category.beatmapsets.some(b => b.ID === beatmapset.ID)) {
+        if (beatmapset.approvedDate.getUTCFullYear() !== category.mca.year)
             return ctx.body = {
-                error: "wrong category", 
+                error: "Mapset is ineligible for the given MCA year!",
             };
-        }
 
-        if (category.isAutomatic) {
-            if (!beatmapset.beatmaps.find(b => b.mode.ID == category.mode.ID)) {
-                return ctx.body = { 
-                    error: "wrong mode",
-                };
-            }
-
-            // others checks if a map is part of the category should go here (if any)
+        if (nominations.some(n => n.beatmapset?.ID === beatmapset.ID)) {
+            return ctx.body = {
+                error: "Already nominated", 
+            };
         }
 
         nomination.beatmapset = beatmapset;
     } else if (category.type == CategoryType.Users) {
         user = await User.findOneOrFail(ctx.request.body.nomineeId);
 
-        if (!isEligibleFor(user, category.modeID)) {
-            return ctx.body = { 
-                error: "user cannot be nominated",
+        if (nominations.some(n => n.user?.ID === user.ID)) {
+            return ctx.body = {
+                error: "Already nominated", 
             };
         }
 
         nomination.user = user;
-    }
-
-    const nominations = await Nomination.find({
-        nominator: ctx.state.user,
-        category,
-    });
-
-    if (nominations.length >= category.maxNominations) {
-        return ctx.body = { 
-            error: "Reached max nominations", 
-        };
-    }
-
-    if (nominations.find(n => (beatmapset ? n.beatmapset?.ID === beatmapset.ID : n.user?.ID === user.ID))) {
-        return ctx.body = {
-            error: "Already nominated", 
-        };
     }
     
     await nomination.save();
@@ -116,12 +220,20 @@ nominationsRouter.post("/create", async (ctx) => {
     ctx.body = nomination;
 });
 
-nominationsRouter.post("/:id/remove", isEligibleCurrentYear, async (ctx) => {
-    const nomination = await Nomination.findOneOrFail(ctx.params.id, {
+nominationsRouter.delete("/remove/:category/:id", isPhase("nomination"), isEligibleCurrentYear, async (ctx) => {
+    const category = await Category.findOneOrFail(ctx.params.category);
+    const nominations = await Nomination.find({
         where: {
-            voter: ctx.state.user,
+            nominator: ctx.state.user,
+            category,
         },
     });
+    const nomination = nominations.find(nom => category.type == CategoryType.Beatmapsets ? nom.beatmapset?.ID == ctx.params.id : nom.user?.ID == ctx.params.id);
+    if (!nomination)
+        return ctx.body = {
+            error: "Could not find specified nomination!",
+        };
+    
     await nomination.remove();
 
     ctx.body = {

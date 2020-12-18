@@ -53,16 +53,16 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropOptions } from "vue";
+
+import { UserMCAInfo } from "../../../CorsaceModels/user";
 
 export default Vue.extend({
     props: {
         user: {
             type: Object,
-            default: () => {
-                return {};
-            },
-        },
+            required: true,
+        } as PropOptions<UserMCAInfo>,
     },
     methods: {
         close () {
@@ -76,17 +76,22 @@ export default Vue.extend({
 .login {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
     width: 100%;
     height: 100%;
+
     position: fixed;
-    background-color: rgba(0,0,0,0.83);
-    z-index: 100;
-    backdrop-filter: blur(7px);
     left: 0;
     right: 0;
     bottom: 0;
-    align-items: center;
-    justify-content: center;
+
+    background-color: rgba(0,0,0,0.83);
+    backdrop-filter: blur(7px);
+
+    z-index: 100;
+    
     text-align: center;
     font-size: 1.5rem;
     text-shadow: 0px 0px 16px #ffffff;

@@ -1,6 +1,7 @@
 import { ParameterizedContext, Next } from "koa";
 import Router from "koa-router";
 import { ModeDivisionType } from "../../CorsaceModels/MCA_AYIM/modeDivision";
+import { MCA } from "../../CorsaceModels/MCA_AYIM/mca";
 
 async function isEligible(ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<void> {
     if (!ctx.params.year) {
@@ -46,42 +47,71 @@ async function isEligibleCurrentYear(ctx, next): Promise<void> {
     };
 }
 
-function isEligibleFor(user, modeID): boolean {
-    const currentYear = new Date().getFullYear() - 1;
-
-    for (const eligibility of user.mcaEligibility) {
-        if (eligibility.year === currentYear) {
-            let isModeEligible = false;
-
-            switch (modeID) {
-                case ModeDivisionType.Standard:
-                    isModeEligible = user.mcaEligibility.some(e => e.standard && e.year == currentYear);
-                    break;
-
-                case ModeDivisionType.Mania:
-                    isModeEligible = user.mcaEligibility.some(e => e.mania && e.year == currentYear);
-                    break;
-            
-                case ModeDivisionType.Taiko:
-                    isModeEligible = user.mcaEligibility.some(e => e.taiko && e.year == currentYear);
-                    break;
-            
-                case ModeDivisionType.Fruits:
-                    isModeEligible = user.mcaEligibility.some(e => e.fruits && e.year == currentYear);
-                    break;
-
-                case ModeDivisionType.Storyboard:
-                    isModeEligible = user.mcaEligibility.some(e => e.storyboard && e.year == currentYear);
-                    break;
-            }
-
-            if (isModeEligible) {
-                return true;
-            }
-        }
-    }
+function isEligibleFor(user, modeID, year): boolean {
+    console.log(modeID);
+    console.log(ModeDivisionType.standard);
+    console.log(modeID === ModeDivisionType.standard);
+    switch (modeID) {
+        case ModeDivisionType.standard:
+            return user.mcaEligibility.some(e => e.standard && e.year == year);
+        
+        case ModeDivisionType.taiko:
+            return user.mcaEligibility.some(e => e.taiko && e.year == year);
     
-    return false;
+        case ModeDivisionType.fruits:
+            return user.mcaEligibility.some(e => e.fruits && e.year == year);
+
+        case ModeDivisionType.mania:
+            return user.mcaEligibility.some(e => e.mania && e.year == year);
+
+        case ModeDivisionType.storyboard:
+            return user.mcaEligibility.some(e => e.storyboard && e.year == year);
+
+        default:
+            return false;
+    }
 }
 
-export { isEligible, isNotEligible, isEligibleCurrentYear, isEligibleFor };
+async function validatePhaseYear(ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<any> {
+    let year = ctx.params.year;
+    if (!year) {
+        const date = new Date;
+        year = date.getUTCFullYear()-1;
+    }
+    ctx.state.year = year;
+
+    await next();
+}
+
+function isPhase(phase: string) {
+    return async (ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<void> => {
+        const mca = await MCA.findOne((new Date).getUTCFullYear()-1);
+        const now = new Date();
+
+        if (!mca || now < mca[phase].start || now > mca[phase].end) {
+            ctx.body = { error: "Not the right time" };
+            return;
+        }
+
+        await next();
+        return;
+    };
+}
+
+function isPhaseStarted(phase: string) {
+    return async (ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<void> => {
+        
+        const mca = await MCA.findOne(ctx.state.year);
+        const now = new Date();
+
+        if (!mca || now < mca[phase].start) {
+            ctx.body = { error: "Not the right time" };
+            return;
+        }
+
+        await next();
+        return;
+    };
+}
+
+export { isEligible, isNotEligible, isEligibleCurrentYear, isEligibleFor, validatePhaseYear, isPhase, isPhaseStarted };

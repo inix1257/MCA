@@ -9,47 +9,63 @@
         <input
             v-model="text"
             class="search__input"
-            placeholder="search for a beatmap"
+            placeholder="search for a beatmap / user"
             maxlength="50"
             @input="emitSearch"
         >
-        <div 
-            class="search__button"
-            @click="changeOption"
-        >
-            {{ selectedOption.toUpperCase() }}
-        </div>
+        <searchButton 
+            :option="option"
+            @emit="emitOption"
+        />
+        <searchButton 
+            :option="selectedOrder"
+            @emit="changeOrder"
+        />
     </div>    
 </template>
 
 <script lang="ts">
 import Vue from "vue";
+
+import button from "./button.vue";
+
 export default Vue.extend({
+    components: {
+        "searchButton": button,
+    },
+    props: {
+        option: {
+            type: String,
+            required: true,
+        },
+    },
     data () {
         return {
             text: "",
-            options: ["relevance", "a-z", "date"],
-            selectedOption: "date",
+            order: ["ASC", "DESC"],
+            selectedOrder: "ASC",
         };
     },
     methods: {
-        changeOption () {
-            let target = "relevance";
-            for (const option of this.options) {
-                if (option === this.selectedOption) {
-                    const index = this.options.indexOf(option);
-                    if (index !== this.options.length-1) {
-                        target = this.options[index+1];
+        changeOrder () {
+            let target = "ASC";
+            for (const option of this.order) {
+                if (option === this.selectedOrder) {
+                    const index = this.order.indexOf(option);
+                    if (index !== this.order.length-1) {
+                        target = this.order[index+1];
                     }
                 }
             }
-            this.selectedOption = target;
+            this.selectedOrder = target;
 
             this.emitSearch();
         },
         emitSearch () {
-            this.$emit("text", this.text);
-            this.$emit("option", this.selectedOption);
+            this.$emit("search", this.text, this.selectedOrder);
+        },
+        emitOption () {
+            this.$emit("option", this.selectedOrder);
         },
     },
 });
@@ -60,7 +76,7 @@ export default Vue.extend({
     display: flex;
 }
 
-.search__pre, .search__input, .search__button {
+.search__pre, .search__input {
     color: white;
     padding: 13px;
 
@@ -93,6 +109,8 @@ export default Vue.extend({
     font-size: 1.5rem;
     letter-spacing: 3px;
 
+    margin-right: 25px;
+
     border: 0;
     border-radius: 0 5.5px 5.5px 0;
 
@@ -106,24 +124,5 @@ export default Vue.extend({
         color: rgba(255, 255, 255, 0.26);
         font-style: italic;
     }
-}
-
-.search__button {    
-    border-radius: 5.5px;
-
-    margin: 0 25px;
-
-    font-size: 1.5rem;
-    text-shadow: 0 0 4px white;
-    
-    width: 15%;
-    min-width: 165px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    word-wrap: none;
-
-    cursor: pointer;
 }
 </style>

@@ -50,63 +50,63 @@ votingRouter.get("/", async (ctx) => {
     };
 });
 
-votingRouter.post("/create", async (ctx) => {
-    const nominee = await Nomination.findOneOrFail(ctx.request.body.nomineeId, {
-        relations: ["category", "user", "beatmapset"],
-    });
+// votingRouter.post("/create", async (ctx) => {
+//     const nominee = await Nomination.findOneOrFail(ctx.request.body.nomineeId, {
+//         relations: ["category", "user", "beatmapset"],
+//     });
     
-    if (!isEligibleFor(ctx.state.user, nominee.category.modeID)) {
-        return ctx.body = { 
-            error: "You weren't active for this mode",
-        };
-    }
+//     if (!isEligibleFor(ctx.state.user, nominee.category.modeID)) {
+//         return ctx.body = { 
+//             error: "You weren't active for this mode",
+//         };
+//     }
 
-    const categoryVotes = await Vote.find({
-        where: {
-            voter: ctx.state.user,
-            category: nominee.category,
-        },
-        order: {
-            choice: "DESC",
-        },
-    });
-    let hasVoted = false;
+//     const categoryVotes = await Vote.find({
+//         where: {
+//             voter: ctx.state.user,
+//             category: nominee.category,
+//         },
+//         order: {
+//             choice: "DESC",
+//         },
+//     });
+//     let hasVoted = false;
 
-    const vote = new Vote();
-    vote.voter = ctx.state.user;
-    vote.category = nominee.category;
+//     const vote = new Vote();
+//     vote.voter = ctx.state.user;
+//     vote.category = nominee.category;
     
-    if (nominee.category.type == CategoryType.Beatmapsets) {
-        vote.beatmapset = nominee.beatmapset;
+//     if (nominee.category.type == CategoryType.Beatmapsets) {
+//         vote.beatmapset = nominee.beatmapset;
 
-        if (categoryVotes.find(v => v.beatmapsetID == nominee.beatmapsetID)) {
-            hasVoted = true;
-        }
-    } else if (nominee.category.type == CategoryType.Users) {
-        vote.user = nominee.user;
+//         if (categoryVotes.find(v => v.beatmapsetID == nominee.beatmapsetID)) {
+//             hasVoted = true;
+//         }
+//     } else if (nominee.category.type == CategoryType.Users) {
+//         vote.user = nominee.user;
         
-        if (categoryVotes.find(v => v.userID == nominee.userID)) {
-            hasVoted = true;
-        }
-    }
+//         if (categoryVotes.find(v => v.userID == nominee.userID)) {
+//             hasVoted = true;
+//         }
+//     }
     
-    if (hasVoted) {
-        return ctx.body = {
-            error: "Already chosen",
-        };
-    }
+//     if (hasVoted) {
+//         return ctx.body = {
+//             error: "Already chosen",
+//         };
+//     }
 
-    if (categoryVotes.length && categoryVotes[0].choice == 10) {
-        return ctx.body = {
-            error: "Max choices given",
-        };
-    }
+//     if (categoryVotes.length && categoryVotes[0].choice == 10) {
+//         return ctx.body = {
+//             error: "Max choices given",
+//         };
+//     }
 
-    vote.choice = categoryVotes.length ? (categoryVotes[0].choice + 1) : 1;
-    await vote.save();
+//     vote.choice = categoryVotes.length ? (categoryVotes[0].choice + 1) : 1;
+//     await vote.save();
 
-    ctx.body = vote;
-});
+//     ctx.body = vote;
+// });
 
 votingRouter.post("/:id/remove", isEligibleCurrentYear, async (ctx) => {
     const vote = await Vote.findOneOrFail(ctx.params.id, {

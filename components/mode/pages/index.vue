@@ -5,35 +5,37 @@
                 <small>{{ $t('mca_ayim.main.rankedSets') }}</small>
                 <div class="ranked-sets__divider" />
                 <div class="ranked-sets__content">
-                    0000000
+                    {{ beatmapCount }}
                 </div>
             </div>
 
-            <div
+            <a
                 class="vote-now"
-                :class="`vote-now--${selectedMode}`"
+                :class="[
+                    `vote-now--${selectedMode}`,
+                    {'vote-now--inactive': !eligible},
+                ]"
+                :href="eligible ? `/${phase.phase}` : undefined"
             >
-                {{ $t('mca_ayim.main.voteNow') }} <span>>></span>
-            </div>
+                {{ $t(`mca_ayim.main.${buttonText}`) }} <span>>></span>
+            </a>
         </div>
 
         <div class="categories">
-            <div
-                v-for="i in 2"
-                :key="i"
+            <collapsible
                 class="categories__list"
-            >
-                <div class="categories__category-title">
-                    {{ $t('mca_ayim.main.categories.map') }}
-                </div>
-                <div
-                    v-for="j in 6"
-                    :key="j"
-                    class="categories__category-award"
-                >
-                    grand award
-                </div>
-            </div>
+                :selected-mode="selectedMode"
+                :title="$t('mca_ayim.main.categories.map')"
+                :list="beatmapCategories"
+                :active="true"
+            />
+            <collapsible
+                class="categories__list"
+                :selected-mode="selectedMode"
+                :title="$t('mca_ayim.main.categories.user')"
+                :list="userCategories"
+                :active="true"
+            />
         </div>
             
         <div class="organizers">
@@ -41,7 +43,7 @@
                 <small>{{ $t('mca_ayim.main.organized') }}</small>
             </div>
             <div class="organizers__content">
-                person a, person b, person c, person d, person e
+                {{ organizers }}
             </div>
         </div>
     </div>
@@ -49,13 +51,86 @@
 
 <script lang="ts">
 import Vue from "vue";
+import Axios from "axios";
+
+import collapsible from "../../collapsible.vue";
+
+import { CategoryInfo } from "../../../../CorsaceModels/MCA_AYIM/category";
+
+interface FullFrontInfo {
+    standard: FrontInfo;
+    taiko: FrontInfo;
+    fruits: FrontInfo;
+    mania: FrontInfo;
+    storyboard: FrontInfo;
+}
+
+interface FrontInfo {
+    categoryInfos: CategoryInfo[];
+    beatmapCount: number;
+    organizers: string[];
+}
+
 export default Vue.extend({
+    components: {
+        collapsible,
+    },
     props: {
         selectedMode: {
             type: String,
             default: "standard",
         },
-    }, 
+        phase: {
+            type: Object,
+            default: function () {
+                return {};
+            },
+        },
+        eligible: Boolean,
+    },
+    data () {
+        return {
+            info: {} as FullFrontInfo,
+        };
+    },
+    computed: {
+        currentModeInfo(): FrontInfo {
+            return this.info[this.selectedMode];
+        },
+        beatmapCategories(): CategoryInfo[] {
+            return this.currentModeInfo?.categoryInfos.filter(x => x.type === "Beatmapsets");
+        },
+        userCategories(): CategoryInfo[] {
+            return this.currentModeInfo?.categoryInfos.filter(x => x.type === "Users");
+        },
+        beatmapCount(): string {
+            let init: string = this.currentModeInfo ? `${Math.min(9999999, this.currentModeInfo.beatmapCount)}` : "0000000";
+            
+            while (init.length < 7)
+                init = "0" + init;
+            
+            return init;
+        },
+        organizers(): string {
+            return this.currentModeInfo?.organizers.join(", ");
+        },
+        buttonText(): string {
+            const text = {
+                nominating: "nominateNow",
+                voting: "voteNow", 
+            };
+            return text[this.phase.phase];
+        },
+    },
+    async mounted () {
+        const res = (await Axios.get("/api/front")).data;
+        if (res.error) {
+            alert(res.error);
+            return;
+        }
+
+        this.info = res.frontData;
+    },
 });
 </script>
 
@@ -63,7 +138,7 @@ export default Vue.extend({
 $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
 
 %spaced-container {
-    margin-bottom: 40px;
+    margin-bottom: 15px;
     display: flex;
     justify-content: space-around;
 }
@@ -89,7 +164,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     @extend %spaced-container;
     flex-wrap: wrap;
 
-    @media (min-width: 1200px) {
+    @media (min-width: 1354px) {
         flex-wrap: nowrap;
     }
 }
@@ -107,6 +182,10 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     &__category-award {
         margin-bottom: 8px;
     }
+}
+
+.categories__list {
+    height: 320px;
 }
 
 .ranked-sets {
@@ -145,15 +224,20 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
 
 .vote-now {
     @extend %half-box;
-    cursor: pointer;
-    font-style: italic;
-    font-size: 1.7rem;
     justify-content: flex-end;
     align-items: center;
-    text-shadow: 1px 1px 3px #222;
+
+    cursor: pointer;
+
+    font-style: italic;
+    font-size: 1.7rem;
     font-weight: 900;
     letter-spacing: 1.2px;
-    background-color: white;
+    text-decoration: none;
+    text-shadow: 1px 1px 3px #222;
+    background: white;
+
+    transition: all 0.25s ease-out;
 
     span {
         margin-left: 15px
@@ -163,6 +247,11 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     
     @media (min-width: 1200px) {
         margin-left: 10px;
+    }
+
+    &--inactive {
+        opacity: 0;
+        cursor: default;
     }
 }
 

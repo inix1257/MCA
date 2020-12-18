@@ -29,12 +29,27 @@ export default Vue.extend({
     data () {
         return {
             pos: 0,
+            bottom: false,
         };
     },
     computed: {
-        relativePos () {
+        relativePos(): string {
             const percent = this.scrollPos / this.scrollSize * 100;
+            let currentlyBottom = false;
+            if (percent >= 99)
+                currentlyBottom = true;
+            this.emit(currentlyBottom);
+            
             return percent - 2 + "%";
+        },
+    },
+    methods: {
+        emit(currentlyBottom: boolean): void {
+            if (currentlyBottom !== this.bottom) {
+                this.bottom = currentlyBottom;
+                if (currentlyBottom === true)
+                    this.$emit("bottom");
+            }
         },
     },
 });

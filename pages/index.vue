@@ -2,14 +2,17 @@
     <div class="home">
         <div class="left-side">
             <div class="voting-date">
-                <div class="voting-date__wheel-container">
+                <div
+                    v-if="phase.phase === 'nominating' || phase.phase === 'voting'" 
+                    class="voting-date__wheel-container"
+                >
                     <div class="voting-date__wheel-img" />
 
                     <div class="voting-date__wheel-box" />
 
                     <div class="voting-date__content">
                         <div class="voting-date__title">
-                            <b>{{ $t('mca_ayim.main.stage.nominating') }}</b>
+                            <b>{{ $t(`mca_ayim.main.stage.${phase.phase}`) }}</b>
                         </div>
                         <div class="voting-date__subtitle">
                             {{ $t('mca_ayim.main.daysLeft') }}
@@ -19,7 +22,9 @@
             </div>
 
             <div class="general-info">
-                <p>01/01/20 10PST - 01/13/20 10PST</p>
+                <p v-if="phase.startDate && phase.endDate">
+                    {{ timeRange }}
+                </p>
 
                 <p>{{ $t('mca_ayim.main.message.1') }}</p>
 
@@ -32,8 +37,11 @@
         </div>
 
         <div class="right-side">
-            <modeSwitcher 
+            <modeSwitcher
                 :page="'index'"
+                :phase="phase"
+                :user="user"
+                :eligible="eligible"
                 :selected-mode="mode"
                 @mode="updateMode"
             />
@@ -51,22 +59,30 @@ export default Vue.extend({
     },
     data () {
         return {
-            value: "0%",
-            startDate: new Date("2020-07-29"),
+            dateInfo: Intl.DateTimeFormat().resolvedOptions(),
         };
     },
     computed: {
         remainingDays (): number {
-            return Math.floor((+this.startDate - Date.now()) / (1000*60*60*24));
-        },
-        mode () {
-            return this.$parent.$attrs.mode;
+            return Math.floor((this.phase.endDate?.getTime() - Date.now()) / (1000*60*60*24));
         },
         eligible () {
             return this.$parent.$attrs.eligible;
         },
+        mode () {
+            return this.$parent.$attrs.mode;
+        },
+        phase () {
+            return this.$parent.$attrs.phase as any;
+        },
         user () {
             return this.$parent.$attrs.user;
+        },
+        timeRange (): string {
+            const dateInfo = Intl.DateTimeFormat().resolvedOptions();
+            const options = { timeZone: dateInfo.timeZone, timeZoneName: "short", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric" };
+
+            return this.phase.startDate.toLocaleString(dateInfo.locale, options) + " - " + this.phase.endDate.toLocaleString(dateInfo.locale, options);
         },
     },
     mounted () {
@@ -191,7 +207,7 @@ export default Vue.extend({
     flex-direction: column;
 }
 
-@media (min-width: 992px) {    
+@media (min-width: 1040px) {    
     .left-side, .right-side {
         flex: 0 0 50%;
         max-width: 50%;

@@ -9,7 +9,7 @@
         <a class="header__seperator"><img src="../../../CorsaceAssets/img/ayim-mca/site/l.png"></a>
         <a
             class="header__title"
-            href="ayim.html"
+            href="https://ayim.corsace.io"
             v-html="$t('mca_ayim.header.ayim')"
         />
         <div 
@@ -26,7 +26,7 @@
             </div>
             <div
                 class="header__login--profile header__login--flex" 
-                @click="toggleDropdown"
+                @click="dropdown=!dropdown"
             >
                 <img 
                     :src="avatarURL"
@@ -46,6 +46,15 @@
             {{ $t('mca_ayim.header.login') }}
         </a>
 
+        <transition name="fade">
+            <dropdown 
+                v-if="dropdown"
+                :user="user"
+                @login="login=!login; $router.push({ path: $route.path, query: { login: true }})"
+                @close="dropdown=false"
+            />
+        </transition>
+
         <login 
             v-if="login"
             :user="user"
@@ -58,19 +67,20 @@
 import Vue, { PropOptions } from "vue";
 
 import login from "./login.vue";
+import dropdown from "./dropdown.vue";
 
 import { UserMCAInfo } from "../../../CorsaceModels/user";
 
 export default Vue.extend({
     components: {
-        "login": login,
+        dropdown,
+        login,
     },
     props: {
         user: {
             type: Object,
             required: true,
         } as PropOptions<UserMCAInfo>,
-        dropdown: Boolean,
         mode: {
             type: String,
             default: "standard",
@@ -80,11 +90,12 @@ export default Vue.extend({
         return {
             login: false,
             modes: ["standard", "taiko", "fruits", "mania", "storyboard"],
+            dropdown: false,
         };
     },
     computed:  {
         avatarURL (): string  {
-            return this.user && this.user.osu ? this.user.osu.avatar + "?" + Math.round(Math.random()*1000000) : "";
+            return this.user && this.user.osu ? this.user.osu.avatar : "";
         },
         triangleClass (): Record<string, any>  {
             const className = `triangleActive--${this.mode}`;
@@ -94,13 +105,8 @@ export default Vue.extend({
         },
     },
     mounted: function () {
-        if (this.$route.query.login && (!this.user?.osu?.userID || !this.user?.discord?.userID))
+        if (this.$route.query.login && !this.user.osu?.userID)
             this.login = true;
-    },
-    methods: {
-        toggleDropdown() {
-            this.$emit("dropdown");
-        },
     },
 });
 </script>
@@ -180,6 +186,13 @@ export default Vue.extend({
 
     padding-right: 10px;
 	}
+}
+
+.fade-enter-active, .fade-leave-active {
+    transition: opacity .25s ease-out;
+}
+.fade-enter, .fade-leave-to {
+    opacity: 0;
 }
 
 @media (max-width: 1080px) {

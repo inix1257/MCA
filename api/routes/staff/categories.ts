@@ -5,7 +5,7 @@ import { ModeDivision } from "../../../../CorsaceModels/MCA_AYIM/modeDivision";
 import { ParameterizedContext, Next } from "koa";
 import { Beatmapset } from "../../../../CorsaceModels/MCA_AYIM/beatmapset";
 
-async function validateBody(ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<any> {
+async function validateCategoryBody(ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<any> {
     const name = ctx.request.body.name.trim();
 
     if (!name) {
@@ -52,21 +52,19 @@ categoriesRouter.get("/", async (ctx) => {
     };
 });
 
-categoriesRouter.post("/create", validateBody, async (ctx) => {
+categoriesRouter.post("/create", validateCategoryBody, async (ctx) => {
     const category = new Category();
     category.name = ctx.state.categoryName;
-    category.isAutomatic = false;
     category.type = CategoryType.Beatmapsets;
     category.mode = ctx.state.categoryMode;
     category.maxNominations = ctx.request.body.maxNominations || 1;
     category.isRequired = ctx.request.body.isRequired;
-    category.beatmapsets = [];
     await category.save();
 
     ctx.body = category;
 });
 
-categoriesRouter.post("/:id/update", validateBody, async (ctx) => {
+categoriesRouter.post("/:id/update", validateCategoryBody, async (ctx) => {
     const category = await Category.findOneOrFail(ctx.params.id, {
         where: {
             isAutomatic: false,
@@ -76,7 +74,6 @@ categoriesRouter.post("/:id/update", validateBody, async (ctx) => {
     category.mode = ctx.state.categoryMode;
     category.maxNominations = ctx.request.body.maxNominations || 1;
     category.isRequired = ctx.request.body.isRequired;
-    category.beatmapsets = ctx.request.body.beatmapsets;
 
     await category.save();
 

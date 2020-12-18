@@ -13,6 +13,7 @@ fs.readdirSync("../CorsaceAssets/lang").forEach(file => {
 });
 
 export default {
+    watch: ["~/api"],
     serverMiddleware: ["~/api"],
     buildModules: ["@nuxt/typescript-build"],
     server: {

@@ -33,6 +33,21 @@ body {
 	font-size: 1rem;
 }
 
+select {
+    font-family: 'Red Hat Display', sans-serif;
+
+    color: black;
+
+    background-color: rgb(115,115,115);
+    box-shadow: 0 0 8px rgba(115, 115, 115, 0.61);
+
+    border: 0;
+
+    &:focus {
+        outline: none;
+    }
+}
+
 @mixin mode-triangle {
     @each $mode in $modes {
         &--#{$mode} {

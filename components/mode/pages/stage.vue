@@ -1,47 +1,28 @@
 <template>
     <div class="stage">
         <div class="stage__categories">
-            <div 
-                v-for="i in 2"
-                :key="i"
-                class="stage__category"
-                :class="{'stage__category--active': i===section}"
-                @click="section===i ? 0 : section=i"
-            >
-                beatmap categories
-                <hr 
-                    class="stage__categoryBar"
-                    :class="`stage__category--${selectedMode}`"
-                >
-                <div
-                    v-for="j in 6"
-                    :key="j"
-                    class="stage__categoryInfo"
-                    @click="category===j ? 0 : category=j"
-                >
-                    <div 
-                        class="stage__categoryName"
-                        :class="{'stage__categoryName--active': j===category && section===i}"
-                    >
-                        grand award
-                    </div>
-                    <hr
-                        class="stage__categoryInfoBar"
-                        :class="[{'stage__categoryInfoBar--active': j===category && section===i}, `stage__category--${selectedMode}`]"
-                    >
-                    <div
-                        class="stage__categoryCount"
-                        :class="{'stage__categoryCount--active': j===category && section===i}"
-                        @click="category===j ? 0 : category=j"
-                    >
-                        1/1
-                    </div>
-                </div>
-            </div>
+            <collapsible
+                :selected-mode="selectedMode"
+                :title="'beatmap categories'"
+                :list="beatmapCategories"
+                :active="section==='beatmap categories'"
+                :show-extra="true"
+                @activate="changeSection('beatmap categories')"
+                @target="changeCategory"
+            />
+            <collapsible
+                :selected-mode="selectedMode"
+                :title="'user categories'"
+                :list="userCategories"
+                :active="section==='user categories'"
+                :show-extra="true"
+                @activate="changeSection('user categories')"
+                @target="changeCategory"
+            />
         </div>
         <div class="category__count">
             <div class="category__countNumber">
-                274
+                {{ count }}
             </div>
             <div class="category__countDivider" />
             <div 
@@ -71,26 +52,34 @@
                     />
                 </div>
                 <div class="category__headTitle">
-                    MARATHON
+                    {{ category.name ? category.name.toUpperCase() : "" }}
                 </div>
                 <div class="category__headDesc">
-                    It's not about the length, it's about how you use it.
+                    {{ category.description }}
                 </div>
             </div>
             <div class="category__selection">
-                <search class="category__selectionSearch" />
+                <search
+                    class="category__selectionSearch" 
+                    :option="option"
+                    @search="updSearch"
+                    @option="updOption"
+                />
                 <div class="category__selectionArea">
                     <div class="category__selectionMaps">
-                        <beatmap
-                            v-for="i in 20"
+                        <choice
+                            v-for="(item, i) in section === 'user categories' ? users : beatmaps"
                             :key="i"
-                            :num="i"
+                            :choice="item"
+                            class="category__Beatmap"
+                            @choose="nominate(item)"
                         />
                     </div>
                     <scroll
                         :scroll-pos="scrollPos"
                         :scroll-size="scrollSize"
                         :selected-mode="selectedMode"
+                        @bottom="append"
                     />
                 </div>
             </div>
@@ -101,37 +90,106 @@
 <script lang="ts">
 import Vue from "vue";
 
+import collapsible from "../../collapsible.vue";
 import search from "../../search.vue";
 import scroll from "../../scroll.vue";
-import beatmap from "../../beatmap.vue";
+import choice from "../../choice.vue";
+import Axios from "axios";
+import { CategoryStageInfo } from "../../../../CorsaceModels/MCA_AYIM/category";
+import { BeatmapsetInfo } from "../../../../CorsaceModels/MCA_AYIM/beatmapset";
+import { UserCondensedInfo } from "../../../../CorsaceModels/user";
 
 export default Vue.extend({
     components: {
-        "search": search,
-        "scroll": scroll,
-        "beatmap": beatmap,
+        choice,
+        collapsible,
+        search,
+        scroll,
     },
     props: {
         selectedMode: {
             type: String,
             default: "standard",
         },
+        phase: {
+            type: Object,
+            default: function () {
+                return {};
+            },
+        },
     },
     data () {
         return {
-            section: 1,
-            category: 2,
+            count: 0,
+            section: "",
+            searchText: "",
+            option: "DATE",
+            category: {} as CategoryStageInfo,
             scrollPos: 0,
-            scrollSize: 0,
+            scrollSize: 1,
+            fullCategories: [] as CategoryStageInfo[],
+            nominations: [] as any[],
+            year: (new Date).getUTCFullYear() - 1,
+            stage: "nominating",
+            beatmaps: [] as BeatmapsetInfo[],
+            users: [] as UserCondensedInfo[],
+            beatmapOptions: ["DATE", "ARTIST", "TITLE", "FAVS", "CREATOR", "SR"],
+            userOptions: ["ID", "ALPH"],
         };
     },
-    mounted () {
+    computed: {
+        userCategories(): CategoryStageInfo[] {
+            return this.fullCategories.filter(x => x.type === "Users" && x.mode === this.selectedMode);
+        },
+        beatmapCategories(): CategoryStageInfo[] {
+            return this.fullCategories.filter(x => x.type === "Beatmapsets" && x.mode === this.selectedMode);
+        },
+        modeNum(): number {
+            const modeNums = {
+                "standard": 1,
+                "taiko": 2,
+                "fruits": 3,
+                "mania": 4,
+                "storyboard": 5,
+            };
+
+            return modeNums[this.selectedMode];
+        },
+    },
+    watch: {
+        selectedMode: function() {
+            this.reset();
+        },
+    },
+    async mounted () {
         const list = document.querySelector(".category__selectionMaps");
         if (list) {
             // eslint-disable-next-line @typescript-eslint/unbound-method
             list.addEventListener("scroll", this.handleScroll);
             this.scrollSize = list.scrollHeight - list.clientHeight;
         }
+
+        if (/^20\d\d$/.test(this.$route.params.year))
+            this.year = parseInt(this.$route.params.year);
+
+        if (/^(nominating|nominate)$/i.test(this.$route.params.year) || /^(nominating|nominate)$/.test(this.$route.params.stage))
+            this.stage = "nominating";
+        else if (/^(vote|voting)$/i.test(this.$route.params.year) || /^(vote|voting)$/.test(this.$route.params.stage))
+            this.stage = "voting";
+
+        if (this.phase.phase !== this.stage)
+            this.$emit("phase", this.stage);
+        
+
+        const data = (await Axios.get(`/api/${this.stage}/${this.year}`)).data;
+
+        if (data.error) {
+            console.log(data.error);
+            return;
+        }
+
+        this.fullCategories = data.categories;
+        this.nominations = data.nominations;
     },
     methods: {
         handleScroll(event) {
@@ -140,6 +198,97 @@ export default Vue.extend({
                 this.scrollPos = event.target.scrollTop;
                 this.scrollSize = event.target.scrollHeight - event.target.clientHeight; // U know... just in case the window size changes Lol
             }
+        },
+        async changeCategory(target) {
+            this.category = target;
+            if (this.category.type === "Users" && this.users.length == 0) {
+                this.option = this.userOptions[0];
+                const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/0/${this.year}?text=${this.searchText}`)).data;
+                this.users = data.list;
+                this.count = data.count;
+            } else if (this.category.type === "Beatmapsets" && this.beatmaps.length == 0) {
+                this.option = this.beatmapOptions[0];
+                const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/0/${this.year}?text=${this.searchText}`)).data;
+                this.beatmaps = data.list;
+                this.count = data.count;
+            }
+        },
+        changeSection(target) {
+            if (this.section !== target) {
+                this.section = target;
+                this.category = {} as CategoryStageInfo;
+                this.beatmaps = [];
+                this.users = [];
+                this.count = 0;
+                this.scrollPos = 0;
+                this.scrollSize = 1;
+            }
+        },
+        updSearch(text, order) {
+            this.searchText = text;
+            setTimeout(async () => {
+                if (this.searchText === text)
+                    await this.search(order);
+            }, 250);
+        },
+        async updOption(order) {
+            const options = this.section === "beatmap categories" ? this.beatmapOptions : this.userOptions; 
+            let target = options[0];
+            for (const option of options) {
+                if (option === this.option) {
+                    const index = options.indexOf(option);
+                    if (index !== options.length-1) {
+                        target = options[index+1];
+                    }
+                }
+            }
+            this.option = target;
+            await this.search(order);
+        },
+        async search(order) {
+            if (!this.category.id)
+                return;
+
+            const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option + order}/0/${this.year}?text=${this.searchText}`)).data;
+            if (this.section === "beatmap categories")
+                this.beatmaps = data.list;
+            else if (this.section === "user categories")
+                this.users = data.list;
+            this.count = data.count;
+        },
+        async append() {
+            if (this.section === "beatmap categories")
+                this.beatmaps.push(...(await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/${this.beatmaps.length}/${this.year}?text=${this.searchText}`)).data.list);
+            else if (this.section === "user categories")
+                this.users.push(...(await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/${this.users.length}/${this.year}?text=${this.searchText}`)).data.list);
+        },
+        async nominate(choice) {
+            let res: any;
+            if (!choice.chosen) {
+                const data = {
+                    categoryId: this.category.id,
+                    nomineeId: this.section === "beatmap categories" ? choice.id : choice.corsaceID,
+                };
+                res = (await Axios.post(`/api/nominating/create`, data)).data;
+            } else
+                res = (await Axios.delete(`/api/nominating/remove/${this.category.id}/${this.section === "beatmap categories" ? choice.id : choice.corsaceID}`)).data;
+
+            if (res.error)
+                return console.error(res.error);
+            
+            if (this.section === "beatmap categories")
+                this.beatmaps[this.beatmaps.findIndex(beatmap => beatmap.id === choice.id)].chosen = !this.beatmaps[this.beatmaps.findIndex(beatmap => beatmap.id === choice.id)].chosen;
+            else if (this.section === "user categories")
+                this.users[this.users.findIndex(user => user.corsaceID === choice.corsaceID)].chosen = !this.users[this.users.findIndex(user => user.corsaceID === choice.corsaceID)].chosen;
+        },
+        reset() {
+            this.section = "";
+            this.count = 0;
+            this.scrollPos = 0;
+            this.scrollSize = 1;
+            this.category = {} as CategoryStageInfo;
+            this.beatmaps = [] as BeatmapsetInfo[];
+            this.users = [] as UserCondensedInfo[];
         },
     },
 });
@@ -166,14 +315,6 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
     @media (min-width: 1200px) {
         flex-wrap: nowrap;
         flex: 1 1 50%;
-    }
-}
-
-@mixin mode-stage__category {
-    @each $mode in $modes {
-        &--#{$mode} {
-            border: 1px solid var(--#{$mode});
-        }
     }
 }
 
@@ -207,126 +348,8 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
 }
 
 .stage__categories {
-    display: flex;
-    flex-direction: column;
     flex: 4;
-    height: 100%;
     position: relative;
-}
-
-.stage__category {
-    @extend %half-box;
-    font-family: 'Lexend Peta';
-    font-size: 2rem;
-    letter-spacing: -3px;
-    text-align: center;
-    color: gray;
-    text-shadow: none;
-    font-weight: 100;
-
-    
-    white-space: nowrap;
-
-    cursor: pointer;
-
-    max-height: 66px;
-    overflow: hidden;
-
-    transition: all 0.25s ease-out;
-
-    &--active {
-        color: white;
-        text-shadow: 0 0 8px white;
-        max-height: 396px;
-    }
-
-    @include mode-stage__category;
-
-    &Bar {
-        right: -25%;
-        top: -2px;
-        position: relative;
-
-        margin: 0;
-        margin-bottom: 15px;
-
-        transition: all 0.25s ease-out;
-    }
-
-    &Info {
-        position: relative;
-
-        display: flex;
-        align-items: center;
-
-        padding: 1%;
-
-        &Bar {
-            left: 1%;
-            right: 0;
-            bottom: 0;
-            top: 85%;
-
-            width: 0;
-            border-width: 0;
-
-            margin: 0;
-            margin-bottom: 15px;
-
-            position: absolute;
-
-            transition: all 0.25s ease-out;
-
-            &--active {
-                width: 60%;
-                border-width: 1px;
-            }
-
-        }
-    }
-
-    &Name, &Count {
-        font-size: 1.5rem;
-        letter-spacing: initial;
-        font-family: 'Red Hat Display';
-    }
-
-    &Name {
-        text-shadow: none;
-        font-weight: 100;
-
-        transition: all 0.25s ease-out;
-
-        &--active {
-            text-shadow: 0 0 8px white;
-            font-weight: 700;
-        }
-    }
-
-    &Count {
-        width: 14%;
-        min-width: fit-content;
-
-        background-color: none;
-        color: white;
-        text-shadow: none;
-        font-weight: 100;
-        border: 1px solid white;
-        border-radius: 7px;
-
-        padding: 5px 9px;
-        margin-left: auto;
-
-        letter-spacing: 2px;
-
-        transition: all 0.25s ease-out;
-
-        &--active {
-            background-color: white;
-            color: rgba(0, 0, 0, 0.6);
-            box-shadow: 0 0 10px white;
-        }
-    }
 }
 
 .category__count {
@@ -574,7 +597,7 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
         max-height: 77px;
 
         &--active {
-            max-height: 396px;
+            max-height: 457px;
         }
     }
 
@@ -582,6 +605,22 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
         flex: 0 0 100%;
 
         padding-bottom: 10px;
+    }
+    
+    .category__Beatmap {
+        width: 48%;
+    }
+}
+
+@media (max-width: 1840px) {
+    .category__Beatmap {
+        width: 48%;
+    }
+}
+
+@media (max-width: 1430px) {
+    .category__Beatmap {
+        width: 100%;
     }
 }
 </style>
