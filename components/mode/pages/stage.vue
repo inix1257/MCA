@@ -184,7 +184,7 @@ export default Vue.extend({
         const data = (await Axios.get(`/api/${this.stage}/${this.year}`)).data;
 
         if (data.error) {
-            console.log(data.error);
+            console.error(data.error);
             return;
         }
 

@@ -72,12 +72,10 @@ nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ct
             nominator: ctx.state.user,
             category,
         });
-        console.log(nominations);
         if (category.type == CategoryType.Beatmapsets)
             setList = nominations.map(nom => nom.beatmapset?.getInfo(true) as BeatmapsetInfo);  
         else if (category.type == CategoryType.Users)
-            userList = nominations.map(nom => nom.user?.getCondensedInfo(true) as UserCondensedInfo);  
-        console.log(setList);    
+            userList = nominations.map(nom => nom.user?.getCondensedInfo(true) as UserCondensedInfo);
     }
     
 

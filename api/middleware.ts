@@ -48,9 +48,6 @@ async function isEligibleCurrentYear(ctx, next): Promise<void> {
 }
 
 function isEligibleFor(user, modeID, year): boolean {
-    console.log(modeID);
-    console.log(ModeDivisionType.standard);
-    console.log(modeID === ModeDivisionType.standard);
     switch (modeID) {
         case ModeDivisionType.standard:
             return user.mcaEligibility.some(e => e.standard && e.year == year);
