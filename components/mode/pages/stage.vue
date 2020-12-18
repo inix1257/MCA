@@ -205,11 +205,13 @@ export default Vue.extend({
                 this.option = this.userOptions[0];
                 const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/0/${this.year}?text=${this.searchText}`)).data;
                 this.users = data.list;
+                this.users = this.users.filter((val, i, self) => self.findIndex(v => v.corsaceID === val.corsaceID) === i);
                 this.count = data.count;
             } else if (this.category.type === "Beatmapsets" && this.beatmaps.length == 0) {
                 this.option = this.beatmapOptions[0];
                 const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/0/${this.year}?text=${this.searchText}`)).data;
                 this.beatmaps = data.list;
+                this.beatmaps = this.beatmaps.filter((val, i, self) => self.findIndex(v => v.id === val.id) === i);
                 this.count = data.count;
             }
         },
@@ -250,17 +252,23 @@ export default Vue.extend({
                 return;
 
             const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option + order}/0/${this.year}?text=${this.searchText}`)).data;
-            if (this.section === "beatmap categories")
+            if (this.section === "beatmap categories") {
                 this.beatmaps = data.list;
-            else if (this.section === "user categories")
+                this.beatmaps = this.beatmaps.filter((val, i, self) => self.findIndex(v => v.id === val.id) === i);
+            } else if (this.section === "user categories") {
                 this.users = data.list;
+                this.users = this.users.filter((val, i, self) => self.findIndex(v => v.corsaceID === val.corsaceID) === i);
+            }
             this.count = data.count;
         },
         async append() {
-            if (this.section === "beatmap categories")
+            if (this.section === "beatmap categories") {
                 this.beatmaps.push(...(await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/${this.beatmaps.length}/${this.year}?text=${this.searchText}`)).data.list);
-            else if (this.section === "user categories")
+                this.beatmaps = this.beatmaps.filter((val, i, self) => self.findIndex(v => v.id === val.id) === i);
+            } else if (this.section === "user categories") {
                 this.users.push(...(await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/${this.users.length}/${this.year}?text=${this.searchText}`)).data.list);
+                this.users = this.users.filter((val, i, self) => self.findIndex(v => v.corsaceID === val.corsaceID) === i);
+            }
         },
         async nominate(choice) {
             let res: any;
@@ -274,12 +282,17 @@ export default Vue.extend({
                 res = (await Axios.delete(`/api/nominating/remove/${this.category.id}/${this.section === "beatmap categories" ? choice.id : choice.corsaceID}`)).data;
 
             if (res.error)
-                return console.error(res.error);
+                return alert(res.error);
             
             if (this.section === "beatmap categories")
                 this.beatmaps[this.beatmaps.findIndex(beatmap => beatmap.id === choice.id)].chosen = !this.beatmaps[this.beatmaps.findIndex(beatmap => beatmap.id === choice.id)].chosen;
             else if (this.section === "user categories")
                 this.users[this.users.findIndex(user => user.corsaceID === choice.corsaceID)].chosen = !this.users[this.users.findIndex(user => user.corsaceID === choice.corsaceID)].chosen;
+            
+            if (!choice.chosen)
+                this.fullCategories[this.fullCategories.findIndex(category => category.id === this.category.id)].count--;
+            else
+                this.fullCategories[this.fullCategories.findIndex(category => category.id === this.category.id)].count++;
         },
         reset() {
             this.section = "";

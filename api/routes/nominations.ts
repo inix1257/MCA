@@ -72,10 +72,12 @@ nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ct
             nominator: ctx.state.user,
             category,
         });
+        console.log(nominations);
         if (category.type == CategoryType.Beatmapsets)
             setList = nominations.map(nom => nom.beatmapset?.getInfo(true) as BeatmapsetInfo);  
         else if (category.type == CategoryType.Users)
             userList = nominations.map(nom => nom.user?.getCondensedInfo(true) as UserCondensedInfo);  
+        console.log(setList);    
     }
     
 
@@ -175,7 +177,7 @@ nominationsRouter.post("/create", isPhase("nomination"), isEligibleCurrentYear, 
 
     if (nominations.length >= category.maxNominations) {
         return ctx.body = { 
-            error: "Reached max nominations", 
+            error: "You have already reached the max amount of nominations for this category! Please remove any current nomination(s) you may have in order to nominate anything else!", 
         };
     }
 
@@ -198,7 +200,7 @@ nominationsRouter.post("/create", isPhase("nomination"), isEligibleCurrentYear, 
 
         if (nominations.some(n => n.beatmapset?.ID === beatmapset.ID)) {
             return ctx.body = {
-                error: "Already nominated", 
+                error: "You have already nominated this beatmap!", 
             };
         }
 
@@ -208,7 +210,7 @@ nominationsRouter.post("/create", isPhase("nomination"), isEligibleCurrentYear, 
 
         if (nominations.some(n => n.user?.ID === user.ID)) {
             return ctx.body = {
-                error: "Already nominated", 
+                error: "You have already nominated this user!", 
             };
         }
 
