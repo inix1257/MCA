@@ -1,5 +1,5 @@
 import Router from "koa-router";
-import { Beatmap } from "../../../CorsaceModels/MCA_AYIM/beatmap";
+import { Beatmap } from "../../../CorsaceModels/beatmap";
 import { User } from "../../../CorsaceModels/user";
 import { isLoggedIn } from "../../../CorsaceServer/middleware";
 import { isNotEligible } from "../middleware";

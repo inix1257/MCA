@@ -96,7 +96,7 @@ import scroll from "../../scroll.vue";
 import choice from "../../choice.vue";
 import Axios from "axios";
 import { CategoryStageInfo } from "../../../../CorsaceModels/MCA_AYIM/category";
-import { BeatmapsetInfo } from "../../../../CorsaceModels/MCA_AYIM/beatmapset";
+import { BeatmapsetInfo } from "../../../../CorsaceModels/beatmapset";
 import { UserCondensedInfo } from "../../../../CorsaceModels/user";
 
 export default Vue.extend({

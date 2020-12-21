@@ -1,7 +1,7 @@
 import Router from "koa-router";
 import { MCA } from "../../../CorsaceModels/MCA_AYIM/mca";
 import { Category } from "../../../CorsaceModels/MCA_AYIM/category";
-import { Beatmapset } from "../../../CorsaceModels/MCA_AYIM/beatmapset";
+import { Beatmapset } from "../../../CorsaceModels/beatmapset";
 import { getRepository } from "typeorm";
 import { discordGuild } from "../../../CorsaceServer/discord";
 import { Config } from "../../../config";
@@ -74,9 +74,9 @@ indexRouter.get("/phase", async (ctx) => {
         } else if (newDate > mca.results) {
             phase = "results";
         } else 
-            return ctx.body = { error: "No phase currently" };
+            return ctx.body = { error: "No phase currently", year: mca.year };
 
-        ctx.body = { phase, startDate, endDate };
+        ctx.body = { phase, startDate, endDate, year: mca.year };
     } catch (e) {
         if (e)
             ctx.body = { error: e };

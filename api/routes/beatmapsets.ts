@@ -1,6 +1,6 @@
 import Router from "koa-router";
 import { isLoggedInOsu } from "../../../CorsaceServer/middleware";
-import { Beatmapset } from "../../../CorsaceModels/MCA_AYIM/beatmapset";
+import { Beatmapset } from "../../../CorsaceModels/beatmapset";
 import { Brackets } from "typeorm";
 
 const beatmapsetsRouter = new Router();

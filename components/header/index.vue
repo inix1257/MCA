@@ -1,6 +1,11 @@
 <template>
     <div class="header">
-        <img src="../../../CorsaceAssets/img/ayim-mca/site/2019.png">
+        <div class="header__year">
+            {{ year }}
+            <div class="header__year--coloured">
+                <span class="header__year--standard">{{ (''+year)[0] }}</span><span class="header__year--taiko">{{ (''+year)[1] }}</span><span class="header__year--fruits">{{ (''+year)[2] }}</span><span class="header__year--mania">{{ (''+year)[3] }}</span>
+            </div>
+        </div>
         <nuxt-link
             class="header__title header__title--active"
             :to="'/'"
@@ -85,6 +90,10 @@ export default Vue.extend({
             type: String,
             default: "standard",
         },
+        year: {
+            type: Number,
+            default: (new Date).getUTCFullYear() - 1,
+        },
     },
     data () {
         return {
@@ -113,15 +122,18 @@ export default Vue.extend({
 
 <style lang="scss">
 .header {
+    width: 100%;
+
 	display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    
 	background-color: #000;
 	border-bottom-style: solid;
 	border-bottom-color: #FFF;
-	align-items: center;
-    width: 100%;
-    flex: 0 0 auto;
+    
 	padding: 0 2%;
-	position: relative;
+    position: relative;
 
 	a {
 		float: left;
@@ -148,7 +160,7 @@ export default Vue.extend({
 .header__login {
 	display: flex;
 	text-align: right;
-	font-size: 1.25rem;
+	font-size: 1.5rem;
 	line-height: 1.19;
 	letter-spacing: 1.89px;
 	color: #d8d8d8;
@@ -164,7 +176,7 @@ export default Vue.extend({
 
 	&--gray {
     white-space: nowrap;
-		font-size: 1rem;
+		font-size: 1.25rem;
 		color: #6f6f6f;
 	}
 
@@ -186,6 +198,40 @@ export default Vue.extend({
 
     padding-right: 10px;
 	}
+}
+
+$modes: "storyboard", "mania" , "fruits", "taiko", "standard";
+
+@mixin yearNumbering {
+    @each $mode in $modes {
+        &--#{$mode} {
+            text-shadow: -1px -1px 0 var(--#{$mode}), 1px -1px 0 var(--#{$mode}), -1px 1px 0 var(--#{$mode}), 1px 1px 0 var(--#{$mode});
+        }
+    }
+}
+
+.header__year {    
+    color: black;
+    text-shadow: -1px -1px 0 #363636, 1px -1px 0 #363636, -1px 1px 0 #363636, 1px 1px 0 #363636;
+    font-size: 10.25rem;
+    font-family: 'Lexend Peta', sans-serif;
+    line-height: 0.7;
+    letter-spacing: -25px;
+    
+    display: inline-block;
+
+    height: 100%;
+    width: 22%;
+    position: relative;
+    overflow: hidden;
+
+    @include yearNumbering;
+
+    &--coloured {
+        position: absolute;
+        top: 5px;
+        left: 3.5%;
+    }
 }
 
 .fade-enter-active, .fade-leave-active {

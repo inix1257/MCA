@@ -6,6 +6,7 @@
         <headerComponent
             :mode="mode"
             :user="user"
+            :year="phase.year"
         />
         <transition name="fade">
             <nuxt

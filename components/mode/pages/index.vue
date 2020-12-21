@@ -5,7 +5,7 @@
                 <small>{{ $t('mca_ayim.main.rankedSets') }}</small>
                 <div class="ranked-sets__divider" />
                 <div class="ranked-sets__content">
-                    {{ beatmapCount }}
+                    {{ /(^0+)(\d+)/.exec(beatmapCount)[1] }}<span class="ranked-sets__content--highlight">{{ /(^0+)(\d+)/.exec(beatmapCount)[2] }}</span>
                 </div>
             </div>
 
@@ -204,7 +204,14 @@ $modes: "storyboard", "mania" , "fruits", "taiko", "standard";
 
     &__content {
         font-family: Scoreboard;
+        color: #4f4f4f;
+        text-shadow: 1px 1px 3px #4f4f4f;
         font-size: 2.6rem
+    }
+
+    &__content--highlight {
+        color: white;
+        text-shadow: 1px 1px 3px white;
     }
 
     @media (min-width: 1200px) {

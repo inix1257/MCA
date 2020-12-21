@@ -3,7 +3,7 @@ import { hasRole, isLoggedInDiscord } from "../../../../CorsaceServer/middleware
 import { Category, CategoryType } from "../../../../CorsaceModels/MCA_AYIM/category";
 import { ModeDivision } from "../../../../CorsaceModels/MCA_AYIM/modeDivision";
 import { ParameterizedContext, Next } from "koa";
-import { Beatmapset } from "../../../../CorsaceModels/MCA_AYIM/beatmapset";
+import { Beatmapset } from "../../../../CorsaceModels/beatmapset";
 
 async function validateCategoryBody(ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<any> {
     const name = ctx.request.body.name.trim();

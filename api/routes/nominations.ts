@@ -3,7 +3,7 @@ import { isLoggedInOsu } from "../../../CorsaceServer/middleware";
 import { Timer } from "../../../CorsaceServer/utils/timer";
 import { Nomination } from "../../../CorsaceModels/MCA_AYIM/nomination";
 import { Category, CategoryType, CategoryStageInfo } from "../../../CorsaceModels/MCA_AYIM/category";
-import { Beatmapset, BeatmapsetInfo } from "../../../CorsaceModels/MCA_AYIM/beatmapset";
+import { Beatmapset, BeatmapsetInfo } from "../../../CorsaceModels/beatmapset";
 import { User, UserCondensedInfo } from "../../../CorsaceModels/user";
 import { isEligibleFor, isEligibleCurrentYear, isPhaseStarted, isPhase, validatePhaseYear } from "../middleware";
 import { getRepository, Raw } from "typeorm";
