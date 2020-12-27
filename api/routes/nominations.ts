@@ -1,15 +1,12 @@
 import Router from "koa-router";
 import { isLoggedInOsu } from "../../../CorsaceServer/middleware";
-import { Timer } from "../../../CorsaceServer/utils/timer";
 import { Nomination } from "../../../CorsaceModels/MCA_AYIM/nomination";
 import { Category, CategoryType, CategoryStageInfo } from "../../../CorsaceModels/MCA_AYIM/category";
 import { Beatmapset, BeatmapsetInfo } from "../../../CorsaceModels/beatmapset";
 import { User, UserCondensedInfo } from "../../../CorsaceModels/user";
 import { isEligibleFor, isEligibleCurrentYear, isPhaseStarted, isPhase, validatePhaseYear } from "../middleware";
-import { getRepository, Raw } from "typeorm";
+import { getRepository } from "typeorm";
 import { ModeDivisionType } from "../../../CorsaceModels/MCA_AYIM/modeDivision";
-
-const timer = new Timer;
 
 const nominationsRouter = new Router();
 
@@ -18,7 +15,6 @@ nominationsRouter.use(validatePhaseYear);
 nominationsRouter.use(isPhaseStarted("nomination"));
 
 nominationsRouter.get("/:year?", async (ctx) => {
-    timer.tick(false);
     const [nominations, categories] = await Promise.all([
         Nomination.find({
             where: {
@@ -39,10 +35,6 @@ nominationsRouter.get("/:year?", async (ctx) => {
         return infos;
     });
 
-    timer.tick();
-
-    timer.average();
-
     ctx.body = {
         nominations,
         categories: categoryInfos,
@@ -50,13 +42,12 @@ nominationsRouter.get("/:year?", async (ctx) => {
 });
 
 nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ctx) => {
-    timer.tick(false);
-
     let list: BeatmapsetInfo[] | UserCondensedInfo[] = [];
     let setList: BeatmapsetInfo[] = [];
     let userList: UserCondensedInfo[] = [];
     const category = await Category.findOneOrFail(ctx.params.category);
 
+    // Obtain mode and amount to skip
     let mode = 1;
     if (/\d+/.test(ctx.params.mode))
         mode = parseInt(ctx.params.mode);
@@ -66,12 +57,15 @@ nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ct
     if (/\d+/.test(ctx.params.skip))
         skip = parseInt(ctx.params.skip);
     
-    // Check if this is the intiial call, add nominations at the top of the list
+    // Check if this is the intiial call, add currently nominated beatmaps/users at the top of the list
     if (skip === 0) {
-        const nominations = await Nomination.find({
+        let nominations = await Nomination.find({
             nominator: ctx.state.user,
-            category,
         });
+        if (!category.isRequired && !nominations.some(nom => nom.category.name === "Grand Award" && nom.category.type === (category.type === CategoryType.Beatmapsets ? CategoryType.Beatmapsets : CategoryType.Users)))
+            return ctx.body = { error: "Please nominate in the Grand Award categories first!" };
+        
+        nominations = nominations.filter(nom => nom.category.ID === category.ID);
         if (category.type == CategoryType.Beatmapsets)
             setList = nominations.map(nom => nom.beatmapset?.getInfo(true) as BeatmapsetInfo);  
         else if (category.type == CategoryType.Users)
@@ -79,12 +73,14 @@ nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ct
     }
     
 
+    // Make sure user is eligible to nominate in this mode
     if (!isEligibleFor(ctx.state.user, mode, ctx.state.year))
         return ctx.body = { error: "Not eligible for this mode!" };
     
     try {
         let count = 0;
-        if (category.type == CategoryType.Beatmapsets) {
+        if (category.type == CategoryType.Beatmapsets) { // Search for beatmaps
+            // Ordering
             let orderMethod = "beatmapset.approvedDate";
             let ascDesc: any = "ASC";
             if (/(artist|title|favs|creator|sr)/i.test(ctx.params.order.toLowerCase())) {
@@ -103,17 +99,48 @@ nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ct
             if (ctx.params.order.toLowerCase().includes("desc"))
                 ascDesc = "DESC";
 
+            // Initial repo setup
             let beatmapQueryBuilder = getRepository(Beatmapset)
                 .createQueryBuilder("beatmapset")
                 .leftJoinAndSelect("beatmapset.creator", "user")
                 .leftJoinAndSelect("user.otherNames", "otherName")
                 .innerJoinAndSelect("beatmapset.beatmaps", "beatmap", mode === 5 ? "beatmap.storyboard = :q" : "beatmap.mode = :q", { q: mode === 5 ? true : mode })
                 .where("beatmapset.approvedDate BETWEEN :start AND :end", { start: `${ctx.state.year}-01-01`, end: `${ctx.state.year+1}-01-01` });
+                
+            // Check if the category has filters since this is a beatmap search
+            if (category.filter) {
+                if (category.filter.minLength)
+                    beatmapQueryBuilder = beatmapQueryBuilder
+                        .andWhere(`beatmap.hitLength>=${category.filter.minLength}`);
+                if (category.filter.maxLength)
+                    beatmapQueryBuilder = beatmapQueryBuilder
+                        .andWhere(`beatmap.hitLength<=${category.filter.maxLength}`);
+                if (category.filter.minBPM)
+                    beatmapQueryBuilder = beatmapQueryBuilder
+                        .andWhere(`beatmapset.BPM>=${category.filter.minBPM}`);
+                if (category.filter.maxBPM)
+                    beatmapQueryBuilder = beatmapQueryBuilder
+                        .andWhere(`beatmapset.BPM<=${category.filter.maxBPM}`);
+                if (category.filter.minSR)
+                    beatmapQueryBuilder = beatmapQueryBuilder
+                        .andWhere(`beatmap.totalSR>=${category.filter.minSR}`);
+                if (category.filter.maxSR)
+                    beatmapQueryBuilder = beatmapQueryBuilder
+                        .andWhere(`beatmap.totalSR<=${category.filter.maxSR}`);
+                if (category.filter.minCS)
+                    beatmapQueryBuilder = beatmapQueryBuilder
+                        .andWhere(`beatmap.circleSize>=${category.filter.minCS}`);
+                if (category.filter.maxCS)
+                    beatmapQueryBuilder = beatmapQueryBuilder
+                        .andWhere(`beatmap.circleSize>=${category.filter.maxCS}`);
+            }
 
+            // Check for search text
             if (ctx.query.text)
                 beatmapQueryBuilder = beatmapQueryBuilder
-                    .andWhere("beatmapset.ID LIKE :criteria OR beatmap.ID LIKE :criteria OR beatmapset.artist LIKE :criteria OR beatmapset.title LIKE :criteria OR beatmapset.tags LIKE :criteria OR beatmap.difficulty LIKE :criteria OR user.osuUsername LIKE :criteria OR user.osuUserID LIKE :criteria OR otherName.name LIKE :criteria", {criteria: `%${ctx.query.text}%`});
-                
+                    .andWhere("(beatmapset.ID LIKE :criteria OR beatmap.ID LIKE :criteria OR beatmapset.artist LIKE :criteria OR beatmapset.title LIKE :criteria OR beatmapset.tags LIKE :criteria OR beatmap.difficulty LIKE :criteria OR user.osuUsername LIKE :criteria OR user.osuUserID LIKE :criteria OR otherName.name LIKE :criteria)", {criteria: `%${ctx.query.text}%`});
+
+            // Search
             setList.push(...await Promise.all((await beatmapQueryBuilder
                 .skip(skip)
                 .take(50)
@@ -121,8 +148,9 @@ nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ct
                 .getMany()).map(map => map.getInfo())));
             list = setList;
             count = await beatmapQueryBuilder.getCount();
-        } else if (category.type == CategoryType.Users) {
-            let orderMethod: any = "CAST(user_osuUserID AS INT)";
+        } else if (category.type == CategoryType.Users) { // Search for users
+            // Ordering
+            let orderMethod = "CAST(user_osuUserID AS INT)";
             let ascDesc: any = "ASC";
             if (ctx.params.order.toLowerCase().includes("alph"))
                 orderMethod = "user_osuUsername";
@@ -130,15 +158,23 @@ nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ct
             if (ctx.params.order.toLowerCase().includes("desc"))
                 ascDesc = "DESC";
 
+            // Initial repo setup
             let userQueryBuilder = getRepository(User)
                 .createQueryBuilder("user")
                 .leftJoinAndSelect("user.otherNames", "otherName")
-                .innerJoinAndSelect("user.mcaEligibility", "mca", `mca.year = :q AND mca.${modeString} = 1`, { q: ctx.state.year });
+                .leftJoinAndSelect("user.mcaEligibility", "mca")
+                .where(`mca.year = :q AND mca.${modeString} = 1`, { q: ctx.state.year });
 
+            if (category.filter?.rookie)
+                userQueryBuilder = userQueryBuilder
+                    .andWhere(`NOT EXISTS (SELECT * FROM mca_eligibility WHERE mca_eligibility.year < :q AND mca_eligibility.userID = user.ID AND mca.${modeString} = 1)`, { q: ctx.state.year });
+        
+            // Check for search text
             if (ctx.query.text)
                 userQueryBuilder = userQueryBuilder
-                    .andWhere("user.osuUsername LIKE :criteria OR user.osuUserID LIKE :criteria OR otherName.name LIKE :criteria", {criteria: `%${ctx.query.text}%`});
+                    .andWhere("(user.osuUsername LIKE :criteria OR user.osuUserID LIKE :criteria OR otherName.name LIKE :criteria)", {criteria: `%${ctx.query.text}%`});
 
+            // Search
             userList.push(...await Promise.all((await userQueryBuilder
                 .skip(skip)
                 .take(50)
@@ -148,10 +184,6 @@ nominationsRouter.get("/search/:mode/:category/:order/:skip?/:year?/", async (ct
             count = await userQueryBuilder.getCount();
         } else
             return ctx.body = { error: "Invalid type parameter. Only 'beatmapsets' or 'users' are allowed."};
-
-        timer.tick();
-
-        timer.average();
 
         ctx.body = {list, count};
     } catch (err) {
@@ -223,15 +255,17 @@ nominationsRouter.post("/create", isPhase("nomination"), isEligibleCurrentYear, 
 nominationsRouter.delete("/remove/:category/:id", isPhase("nomination"), isEligibleCurrentYear, async (ctx) => {
     const category = await Category.findOneOrFail(ctx.params.category);
     const nominations = await Nomination.find({
-        where: {
-            nominator: ctx.state.user,
-            category,
-        },
+        nominator: ctx.state.user,
     });
     const nomination = nominations.find(nom => category.type == CategoryType.Beatmapsets ? nom.beatmapset?.ID == ctx.params.id : nom.user?.ID == ctx.params.id);
     if (!nomination)
         return ctx.body = {
             error: "Could not find specified nomination!",
+        };
+
+    if (nomination.category.isRequired && nominations.some(nom => !nom.category.isRequired))
+        return ctx.body = {
+            error: "You cannot remove nominations in required categories if you have nominations in non-required categories!",
         };
     
     await nomination.remove();

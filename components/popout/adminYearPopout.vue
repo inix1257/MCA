@@ -120,39 +120,3 @@ export default Vue.extend({
     },
 });
 </script>
-
-<style lang="scss">
-.adminPopout {
-    position: fixed;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    background-color: rgba(0,0,0,0.9);
-    box-shadow: 0 0 4px rgba(0,0,0,0.9);
-}
-
-.adminPopout__section {
-    display: flex;
-    flex-direction: column;
-
-    padding: 15px;
-}
-
-.adminPopout__input {
-    font-family: 'Red Hat Display', sans-serif;
-
-    color: black;
-
-    background-color: rgb(115,115,115);
-    box-shadow: 0 0 8px rgba(115, 115, 115, 0.61);
-
-    border: 0;
-
-    &:focus {
-        outline: none;
-    }
-}
-</style>

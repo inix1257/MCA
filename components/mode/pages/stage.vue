@@ -124,6 +124,7 @@ export default Vue.extend({
             section: "",
             searchText: "",
             option: "DATE",
+            order: "ASC",
             category: {} as CategoryStageInfo,
             scrollPos: 0,
             scrollSize: 1,
@@ -201,15 +202,17 @@ export default Vue.extend({
         },
         async changeCategory(target) {
             this.category = target;
-            if (this.category.type === "Users" && this.users.length == 0) {
-                this.option = this.userOptions[0];
-                const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/0/${this.year}?text=${this.searchText}`)).data;
+            if (this.category.type === "Users") {
+                const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option + this.order}/0/${this.year}?text=${this.searchText}`)).data;
+                if (data.error)
+                    return alert(data.error);
                 this.users = data.list;
                 this.users = this.users.filter((val, i, self) => self.findIndex(v => v.corsaceID === val.corsaceID) === i);
                 this.count = data.count;
-            } else if (this.category.type === "Beatmapsets" && this.beatmaps.length == 0) {
-                this.option = this.beatmapOptions[0];
-                const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/0/${this.year}?text=${this.searchText}`)).data;
+            } else if (this.category.type === "Beatmapsets") {
+                const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option + this.order}/0/${this.year}?text=${this.searchText}`)).data;
+                if (data.error)
+                    return alert(data.error);
                 this.beatmaps = data.list;
                 this.beatmaps = this.beatmaps.filter((val, i, self) => self.findIndex(v => v.id === val.id) === i);
                 this.count = data.count;
@@ -228,9 +231,10 @@ export default Vue.extend({
         },
         updSearch(text, order) {
             this.searchText = text;
+            this.order = order;
             setTimeout(async () => {
                 if (this.searchText === text)
-                    await this.search(order);
+                    await this.search();
             }, 250);
         },
         async updOption(order) {
@@ -245,13 +249,14 @@ export default Vue.extend({
                 }
             }
             this.option = target;
-            await this.search(order);
+            this.order = order;
+            await this.search();
         },
-        async search(order) {
+        async search() {
             if (!this.category.id)
                 return;
 
-            const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option + order}/0/${this.year}?text=${this.searchText}`)).data;
+            const data = (await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option + this.order}/0/${this.year}?text=${this.searchText}`)).data;
             if (this.section === "beatmap categories") {
                 this.beatmaps = data.list;
                 this.beatmaps = this.beatmaps.filter((val, i, self) => self.findIndex(v => v.id === val.id) === i);
@@ -263,10 +268,10 @@ export default Vue.extend({
         },
         async append() {
             if (this.section === "beatmap categories") {
-                this.beatmaps.push(...(await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/${this.beatmaps.length}/${this.year}?text=${this.searchText}`)).data.list);
+                this.beatmaps.push(...(await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option + this.order}/${this.beatmaps.length}/${this.year}?text=${this.searchText}`)).data.list);
                 this.beatmaps = this.beatmaps.filter((val, i, self) => self.findIndex(v => v.id === val.id) === i);
             } else if (this.section === "user categories") {
-                this.users.push(...(await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option}/${this.users.length}/${this.year}?text=${this.searchText}`)).data.list);
+                this.users.push(...(await Axios.get(`/api/nominating/search/${this.modeNum}/${this.category.id}/${this.option + this.order}/${this.users.length}/${this.year}?text=${this.searchText}`)).data.list);
                 this.users = this.users.filter((val, i, self) => self.findIndex(v => v.corsaceID === val.corsaceID) === i);
             }
         },

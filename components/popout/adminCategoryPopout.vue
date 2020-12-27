@@ -45,6 +45,103 @@
                 </option>
             </select>
         </div>
+        <div class="adminPopout__section">
+            needs vetting
+            <select v-model="vetting">
+                <option :value="true">
+                    yes
+                </option>
+                <option :value="false">
+                    no
+                </option>
+            </select>
+        </div>
+        <div 
+            v-if="type === 'beatmapsets'"
+            class="adminPopout__section"
+        >
+            auto filters
+            <select v-model="filter">
+                <option :value="true">
+                    yes
+                </option>
+                <option :value="false">
+                    no
+                </option>
+            </select>
+        </div>
+        <div 
+            v-else-if="type === 'users'"
+            class="adminPopout__section"
+        >
+            rookie
+            <select v-model="rookie">
+                <option :value="true">
+                    yes
+                </option>
+                <option :value="false">
+                    no
+                </option>
+            </select>
+        </div>
+        <div v-if="filter && type === 'beatmapsets'">
+            <div class="adminPopout__section">
+                min Length (seconds)
+                <input 
+                    v-model="filterParams.minLength"
+                    class="adminPopout__input"
+                >
+            </div>
+            <div class="adminPopout__section">
+                max Length (seconds)
+                <input 
+                    v-model="filterParams.maxLength"
+                    class="adminPopout__input"
+                >
+            </div>
+            <div class="adminPopout__section">
+                min BPM
+                <input 
+                    v-model="filterParams.minBPM"
+                    class="adminPopout__input"
+                >
+            </div>
+            <div class="adminPopout__section">
+                max BPM
+                <input 
+                    v-model="filterParams.maxBPM"
+                    class="adminPopout__input"
+                >
+            </div>
+            <div class="adminPopout__section">
+                min SR
+                <input 
+                    v-model="filterParams.minSR"
+                    class="adminPopout__input"
+                >
+            </div>
+            <div class="adminPopout__section">
+                maxSR
+                <input 
+                    v-model="filterParams.maxSR"
+                    class="adminPopout__input"
+                >
+            </div>
+            <div class="adminPopout__section">
+                min CS
+                <input 
+                    v-model="filterParams.minCS"
+                    class="adminPopout__input"
+                >
+            </div>
+            <div class="adminPopout__section">
+                max CS
+                <input 
+                    v-model="filterParams.maxCS"
+                    class="adminPopout__input"
+                >
+            </div>
+        </div>
         <selectButton 
             :option="'save'"
             @emit="send"
@@ -82,22 +179,23 @@ export default Vue.extend({
             type: "beatmapsets",
             nomCount: 3,
             required: false,
+            vetting: false,
+            rookie: false,
+            filter: false,
+            filterParams: {},
         };
     },
     updated () {
-        if (
-            !_.isEqual(this.info, this.init) &&
-            this.info.name && 
-            this.info.desc && 
-            this.info.type && 
-            this.info.nomCount && 
-            this.info.required
-        ) {
+        if (!_.isEqual(this.info, this.init)) {
             this.name = this.info.name;
             this.desc = this.info.desc;
             this.type = this.info.type;
             this.nomCount = this.info.nomCount;
             this.required = this.info.required;
+            this.vetting = this.info.vetting;
+            this.rookie = this.info.rookie ?? false;
+            this.filter = this.info.filter ? true : false;
+            this.filterParams = this.filter ? this.info.filter : {};
         }
     },
     methods: {
@@ -108,44 +206,11 @@ export default Vue.extend({
                 type: this.type,
                 nomCount: this.nomCount,
                 required: this.required,
+                vetting: this.vetting,
+                rookie: this.rookie,
+                filter: this.filterParams,
             });
         },
     },
 });
 </script>
-
-<style lang="scss">
-.adminPopout {
-    position: fixed;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    background-color: rgba(0,0,0,0.9);
-    box-shadow: 0 0 4px rgba(0,0,0,0.9);
-}
-
-.adminPopout__section {
-    display: flex;
-    flex-direction: column;
-
-    padding: 15px;
-}
-
-.adminPopout__input {
-    font-family: 'Red Hat Display', sans-serif;
-
-    color: black;
-
-    background-color: rgb(115,115,115);
-    box-shadow: 0 0 8px rgba(115, 115, 115, 0.61);
-
-    border: 0;
-
-    &:focus {
-        outline: none;
-    }
-}
-</style>

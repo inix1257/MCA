@@ -8,7 +8,7 @@
             target="_blank"
         >
             <div class="choice__infoTitle">
-                {{ choice.title.substring(0, Math.min(19, choice.title.length)) + (choice.title.length > 19 ? "..." : "") }}
+                {{ choice.title.substring(0, Math.min(18, choice.title.length)) + (choice.title.length > 18 ? "..." : "") }}
             </div>
             <div class="choice__infoArtist">
                 {{ choice.artist.substring(0, Math.min(25, choice.artist.length)) + (choice.artist.length > 25 ? "..." : "") }}

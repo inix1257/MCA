@@ -71,7 +71,7 @@ function isEligibleFor(user, modeID, year): boolean {
 
 async function validatePhaseYear(ctx: ParameterizedContext<any, Router.IRouterParamContext<any, {}>>, next: Next): Promise<any> {
     let year = ctx.params.year;
-    if (!year) {
+    if (!year || !/20\d\d/.test(year)) {
         const date = new Date;
         year = date.getUTCFullYear()-1;
     }

@@ -37,9 +37,9 @@ function getTotalFirstChoicesInCategory(votes: Vote[], categoryID: number): Cate
             )
         );
 
-        if (i !== -1) {
+        if (i !== -1)
             categorySum[i].totalChoices ++;
-        } else {
+        else {
             categorySum.push({
                 beatmapsetID: vote.beatmapsetID,
                 userID: vote.userID,
@@ -77,6 +77,7 @@ const categoryGenerator = new CategoryGenerator;
 adminRouter.use(isLoggedInDiscord);
 adminRouter.use(isCorsace);
 
+// Endpoint to obtain all MCAs and their info
 adminRouter.get("/", async (ctx) => {
     const mca = await MCA.find();
     const mcaInfo = mca.map(x => x.getInfo());
@@ -193,23 +194,22 @@ adminRouter.delete("/:year/deleteYear", async (ctx) => {
     }
 });
 
-// Endpoints for creating a category
+// Endpoint for creating a category
 adminRouter.post("/createCategory", async (ctx) => {
     const data = ctx.request.body;
 
-    if (!data.name) {
+    if (!data.name)
         return ctx.body = { error: "Missing category name!" };
-    } else if (!data.desc) {
+    else if (!data.desc)
         return ctx.body = { error: "Missing category description!" };
-    } else if (!data.type) {
+    else if (!data.type)
         return ctx.body = { error: "Missing category type!" };
-    } else if (!data.nomCount || data.nomCount <= 0) {
+    else if (!data.nomCount || data.nomCount <= 0)
         return ctx.body = { error: "Missing non-zero positive nomination count!" };
-    } else if (!data.year) {
+    else if (!data.year)
         return ctx.body = { error: "Missing year for category!" };
-    } else if (!data.mode) {
+    else if (!data.mode)
         return ctx.body = { error: "Missing mode for category!" };
-    }
 
     try {
         let categoryType: CategoryType;
@@ -229,17 +229,26 @@ adminRouter.post("/createCategory", async (ctx) => {
             return ctx.body = { error: "The mode provided does not exist!" };
 
         const category = categoryGenerator.create(data.name, data.desc, categoryType, mca, mode);
+        
+        if (data.type === "beatmapsets" && data.filter)
+            category.addFilter(data.filter);
+        else if (data.type === "users" && data.rookie)
+            category.addFilter({rookie: true});
 
         if (data.nomCount !== 3)
             category.maxNominations = data.nomCount;
+
+        if (data.required)
+            category.isRequired = data.required;
+        
+        if (data.vetting)
+            category.requiresVetting = data.vetting;
         
         await category.save();
 
         ctx.body = { message: "Success! attached is the new category.", category };
     } catch (e) {
-        if (e) {
-            ctx.body = { error: e };
-        }
+        if (e) ctx.body = { error: e };
     }
 });
 
