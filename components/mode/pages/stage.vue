@@ -55,7 +55,7 @@
                     {{ category.name ? category.name.toUpperCase() : "" }}
                 </div>
                 <div class="category__headDesc">
-                    {{ category.description }}
+                    {{ category.description + (category.isFiltered ? " (auto filter enabled)" : "") }}
                 </div>
             </div>
             <div class="category__selection">

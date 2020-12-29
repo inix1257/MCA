@@ -2,7 +2,8 @@
     <div 
         class="collapsible"
         :class="{'collapsible--active': active}"
-        @click="!active ? $emit('activate') : 0; !active ? target = {} : 0"
+        :style="{'overflow-y': scroll ? 'visible' : 'hidden'}"
+        @click="!active ? ($emit('activate'), target = {}) : 0"
     >
         {{ title }}
         <hr 
@@ -78,6 +79,7 @@ export default Vue.extend({
         },
         active: Boolean,
         showExtra: Boolean,
+        scroll: Boolean,
     },
     data () {
         return {

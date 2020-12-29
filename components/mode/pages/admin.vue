@@ -47,6 +47,7 @@
                 :list="activeCategories"
                 :show-extra="true"
                 :active="true"
+                :scroll="true"
                 @target="changeCategory"
             />
             <categoryPopout 
@@ -266,7 +267,11 @@ export default Vue.extend({
 .admin__collapsible {
     flex: 0 0 100%;
 
-    height: 100%;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 .admin__scroller {
